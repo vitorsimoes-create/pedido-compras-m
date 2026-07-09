@@ -182,9 +182,17 @@
       <label>Ordenar por</label>
       <select id="sel-order">
         <option value="sugestao">Sugestão (maior)</option>
-        <option value="desc">Descrição A-Z</option>
+        <option value="sugestao_asc">Sugestão (menor)</option>
+        <option value="desc">Descrição (A-Z)</option>
+        <option value="desc_z">Descrição (Z-A)</option>
         <option value="custo">Custo (maior)</option>
+        <option value="custo_asc">Custo (menor)</option>
         <option value="estoque">Estoque (menor)</option>
+        <option value="estoque_desc">Estoque (maior)</option>
+        <option value="pico">Pico de vendas (maior)</option>
+        <option value="pico_asc">Pico de vendas (menor)</option>
+        <option value="cod">Código (menor)</option>
+        <option value="cod_desc">Código (maior)</option>
       </select>
     </div>
     <button class="btn btn-outline" onclick="limparFiltros()">↺ Limpar</button>
@@ -213,7 +221,6 @@
               <th>Cód.</th>
               <th>Descrição</th>
               <th>Grupo</th>
-              <th>Ref.</th>
               <th>Cód. Fabricante</th>
               <th class="num">Custo</th>
               <th class="num">Estoque</th>
@@ -435,9 +442,17 @@ function filterData(){
   // Só aplica ordenação padrão quando não há busca OU no modo E
   if(!f.busca || f.modo==='E'){
     if(f.order==='sugestao') d.sort((a,b)=>b.s-a.s);
+    else if(f.order==='sugestao_asc') d.sort((a,b)=>a.s-b.s);
     else if(f.order==='desc') d.sort((a,b)=>a.d.localeCompare(b.d));
+    else if(f.order==='desc_z') d.sort((a,b)=>b.d.localeCompare(a.d));
     else if(f.order==='custo') d.sort((a,b)=>b.p-a.p);
+    else if(f.order==='custo_asc') d.sort((a,b)=>a.p-b.p);
     else if(f.order==='estoque') d.sort((a,b)=>a.e-b.e);
+    else if(f.order==='estoque_desc') d.sort((a,b)=>b.e-a.e);
+    else if(f.order==='pico') d.sort((a,b)=>(b.k||0)-(a.k||0));
+    else if(f.order==='pico_asc') d.sort((a,b)=>(a.k||0)-(b.k||0));
+    else if(f.order==='cod') d.sort((a,b)=>a.c-b.c);
+    else if(f.order==='cod_desc') d.sort((a,b)=>b.c-a.c);
   }
 
   return d;
@@ -473,7 +488,7 @@ function render(){
 
   const tbody=document.getElementById('tbl-body');
   if(pageItems.length===0){
-    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:30px;color:#94a3b8">Nenhum item encontrado</td></tr>';
+    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:#94a3b8">Nenhum item encontrado</td></tr>';
   }else{
     tbody.innerHTML=pageItems.map(item=>{
       const inPedido=pedido[item.c];
@@ -499,7 +514,6 @@ function render(){
         <td><span style="font-size:11px;color:#64748b">${item.c}</span></td>
         <td class="desc" title="${escHtml(item.d)}">${highlight(item.d,terms)}</td>
         <td><span class="grupo-badge gb-${gc}">${gl}</span></td>
-        <td style="font-size:11px;color:#94a3b8">${escHtml(item.r)}</td>
         <td style="font-size:11px;color:#94a3b8">${escHtml(item.cf||'—')}</td>
         <td class="num">${fmt(item.p)}</td>
         <td class="num ${item.e<0?'neg':item.e===0?'':'pos'}">${item.e}</td>
@@ -579,7 +593,7 @@ function renderPedido(){
       ${itens.map(i=>`<div class="pedido-item" style="${i.s<=0?'border-left:3px solid #f59e0b;background:#fffbeb':''}">
         <div class="info">
           <div class="name" title="${escHtml(i.d)}">${escHtml(i.d)}${i.s<=0?'<span style="font-size:9px;background:#fef3c7;color:#92400e;border-radius:3px;padding:1px 5px;margin-left:5px;font-weight:700">MANUAL</span>':''}</div>
-          <div class="meta">Ref: ${escHtml(i.r||'—')} · Cód. Fab: ${escHtml(i.cf||'—')} · Custo: ${fmt(i.p)} · Est: <strong style="color:${i.e<0?'#ef4444':i.e===0?'#94a3b8':'#10b981'}">${i.e}</strong> · Pico: <strong style="color:#7c3aed">${i.k||0}</strong> · <span class="grupo-badge gb-${i.g||'DIVERSOS'}" style="font-size:10px">${GRUPO_LABELS[i.g||'DIVERSOS']||'?'}</span>${i.s>0?` · Sug: <strong>${i.s}</strong>`:''} · <span style="font-size:10px;background:${i.nc===1?'#fee2e2':i.nc===2?'#fef3c7':'#dcfce7'};color:${i.nc===1?'#991b1b':i.nc===2?'#92400e':'#166534'};border-radius:3px;padding:1px 5px">${comprarTexto(i)}</span></div>
+          <div class="meta">Cód. Fab: ${escHtml(i.cf||'—')} · Custo: ${fmt(i.p)} · Est: <strong style="color:${i.e<0?'#ef4444':i.e===0?'#94a3b8':'#10b981'}">${i.e}</strong> · Pico: <strong style="color:#7c3aed">${i.k||0}</strong> · <span class="grupo-badge gb-${i.g||'DIVERSOS'}" style="font-size:10px">${GRUPO_LABELS[i.g||'DIVERSOS']||'?'}</span>${i.s>0?` · Sug: <strong>${i.s}</strong>`:''} · <span style="font-size:10px;background:${i.nc===1?'#fee2e2':i.nc===2?'#fef3c7':'#dcfce7'};color:${i.nc===1?'#991b1b':i.nc===2?'#92400e':'#166534'};border-radius:3px;padding:1px 5px">${comprarTexto(i)}</span></div>
         </div>
         <div class="qty-ctrl">
           <button onclick="changeQty(${i.c},-1)">−</button>
@@ -627,7 +641,7 @@ function exportarPedido(){
   Object.entries(bySupplier).forEach(([sup,itens])=>{
     const supTotal=itens.reduce((s,i)=>s+i.p*i.qty,0);
     textLines.push(`=== ${sup} ===`);
-    textLines.push('Cód.\tDescrição\tGrupo\tRef.\tCód. Fabricante\tEstoque\tPico\tSugestão\tComprar?\tQtd\tCusto Unit.\tTotal');
+    textLines.push('Cód.\tDescrição\tGrupo\tCód. Fabricante\tEstoque\tPico\tSugestão\tComprar?\tQtd\tCusto Unit.\tTotal');
 
     let rows='';
     itens.forEach(i=>{
@@ -642,7 +656,6 @@ function exportarPedido(){
         <td class="cod">${i.c}</td>
         <td>${escHtml(i.d)}${manual}</td>
         <td><span class="grupo-badge gb-${i.g||'DIVERSOS'}" style="font-size:11px">${gl}</span></td>
-        <td class="ref">${escHtml(i.r||'—')}</td>
         <td class="ref">${escHtml(i.cf||'—')}</td>
         <td class="num" style="color:${i.e<0?'#ef4444':i.e===0?'#94a3b8':'#059669'};font-weight:600">${i.e}</td>
         <td class="num" style="color:#7c3aed;font-weight:600">${i.k||0}</td>
@@ -652,7 +665,7 @@ function exportarPedido(){
         <td class="num">${fmt(i.p)}</td>
         <td class="total">${fmt(i.p*i.qty)}</td>
       </tr>`;
-      textLines.push(`${i.c}\t${i.d}\t${gl}\t${i.r||'—'}\t${i.cf||'—'}\t${i.e}\t${i.k||0}\t${i.s}\t${comprarTexto(i)}\t${i.qty}\t${fmt(i.p)}\t${fmt(i.p*i.qty)}`);
+      textLines.push(`${i.c}\t${i.d}\t${gl}\t${i.cf||'—'}\t${i.e}\t${i.k||0}\t${i.s}\t${comprarTexto(i)}\t${i.qty}\t${fmt(i.p)}\t${fmt(i.p*i.qty)}`);
     });
 
     html+=`<div class="ped-bloco">
@@ -665,7 +678,6 @@ function exportarPedido(){
           <th>Cód.</th>
           <th>Descrição</th>
           <th>Grupo</th>
-          <th>Referência</th>
           <th>Cód. Fabricante</th>
           <th class="num">Estoque</th>
           <th class="num">Pico</th>
@@ -703,22 +715,21 @@ function exportarExcel(){
 
   Object.entries(bySupplier).forEach(([sup,itens])=>{
     const supTotal=itens.reduce((s,i)=>s+i.p*i.qty,0);
-    csv+=`FORNECEDOR:;${sup};;;;;;;;;;;${fmt(supTotal).replace('.',',')}\n`;
-    csv+='Código;Descrição;Grupo;Referência;Cód. Fabricante;Estoque;Pico Mensal;Sugestão;Comprar?;Qtd Pedido;Custo Unit. (R$);Total (R$)\n';
+    csv+=`FORNECEDOR:;${sup};;;;;;;;;;${fmt(supTotal).replace('.',',')}\n`;
+    csv+='Código;Descrição;Grupo;Cód. Fabricante;Estoque;Pico Mensal;Sugestão;Comprar?;Qtd Pedido;Custo Unit. (R$);Total (R$)\n';
     itens.forEach(i=>{
       const gl=GRUPO_LABELS[i.g||'DIVERSOS']||'?';
       const desc=i.d.replace(/;/g,' ');
-      const ref=String(i.r||'—').replace(/;/g,' ').replace(/"/g,'""');
       const codFab=String(i.cf||'—').replace(/;/g,' ').replace(/"/g,'""');
       const custo=i.p.toFixed(2).replace('.',',');
       const tot=(i.p*i.qty).toFixed(2).replace('.',',');
       const manual=i.s<=0?' [MANUAL]':'';
-      csv+=`${i.c};"${desc}${manual}";${gl};="${ref}";="${codFab}";${i.e};${i.k||0};${i.s};${comprarTexto(i)};${i.qty};${custo};${tot}\n`;
+      csv+=`${i.c};"${desc}${manual}";${gl};="${codFab}";${i.e};${i.k||0};${i.s};${comprarTexto(i)};${i.qty};${custo};${tot}\n`;
     });
     const sub=fmt(supTotal).replace('.',',');
-    csv+=`Subtotal ${sup}:;;;;;;;;;;;${sub}\n\n`;
+    csv+=`Subtotal ${sup}:;;;;;;;;;;${sub}\n\n`;
   });
-  csv+=`\nTOTAL GERAL;;;;;;;;;;;${fmt(total).replace('.',',')}\n`;
+  csv+=`\nTOTAL GERAL;;;;;;;;;;${fmt(total).replace('.',',')}\n`;
 
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
@@ -750,7 +761,6 @@ function exportarPDF(){
         <td class="cod">${i.c}</td>
         <td class="desc">${escHtml(i.d)}${manual}</td>
         <td><span class="gb">${gl}</span></td>
-        <td class="ref">${escHtml(i.r||'—')}</td>
         <td class="ref">${escHtml(i.cf||'—')}</td>
         <td class="num ${estCls}">${i.e}</td>
         <td class="num pico">${i.k||0}</td>
@@ -768,7 +778,7 @@ function exportarPDF(){
       </div>
       <table>
         <thead><tr>
-          <th>Cód.</th><th>Descrição</th><th>Grupo</th><th>Referência</th><th>Cód. Fabricante</th>
+          <th>Cód.</th><th>Descrição</th><th>Grupo</th><th>Cód. Fabricante</th>
           <th class="num">Estoque</th><th class="num">Pico</th><th class="num">Sugestão</th><th class="num">Comprar?</th>
           <th class="num">Qtd</th><th class="num">Custo Unit.</th><th class="num">Total</th>
         </tr></thead>
@@ -898,7 +908,6 @@ function abrirPedidoAba(){
       rows+=`<tr>
         <td style="color:#888;font-size:11px">${item.c}</td>
         <td>${item.d||''}</td>
-        <td style="color:#888;font-size:11px">${item.r||'—'}</td>
         <td style="color:#888;font-size:11px">${item.cf||'—'}</td>
         <td style="text-align:right">${fmtR(item.p||0)}</td>
         <td style="text-align:center;font-weight:700">${item.e}</td>
@@ -917,7 +926,6 @@ function abrirPedidoAba(){
         <thead><tr style="background:#dbeafe">
           <th style="padding:6px 10px;text-align:left;font-size:10px;color:#1e3a8a;text-transform:uppercase">Cód.</th>
           <th style="padding:6px 10px;text-align:left;font-size:10px;color:#1e3a8a;text-transform:uppercase">Descrição</th>
-          <th style="padding:6px 10px;text-align:left;font-size:10px;color:#1e3a8a;text-transform:uppercase">Ref.</th>
           <th style="padding:6px 10px;text-align:left;font-size:10px;color:#1e3a8a;text-transform:uppercase">Cód. Fab.</th>
           <th style="padding:6px 10px;text-align:right;font-size:10px;color:#1e3a8a;text-transform:uppercase">Custo</th>
           <th style="padding:6px 10px;text-align:center;font-size:10px;color:#1e3a8a;text-transform:uppercase">Estoque</th>
@@ -928,7 +936,7 @@ function abrirPedidoAba(){
           <th style="padding:6px 10px;text-align:right;font-size:10px;color:#1e3a8a;text-transform:uppercase">Total</th>
         </tr></thead>
         <tbody>${rows}</tbody>
-        <tr><td colspan="11" style="text-align:right;padding:6px 10px;background:#f0fdf4;font-weight:700;color:#065f46;font-size:12px">Subtotal: ${fmtR(sub)}</td></tr>
+        <tr><td colspan="10" style="text-align:right;padding:6px 10px;background:#f0fdf4;font-weight:700;color:#065f46;font-size:12px">Subtotal: ${fmtR(sub)}</td></tr>
       </table>
     </div>`;
   });
