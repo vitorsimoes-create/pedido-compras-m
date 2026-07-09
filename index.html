@@ -682,9 +682,9 @@ function exportarPedido(){
         <td class="num" style="color:#7c3aed;font-weight:600">${i.k||0}</td>
         <td class="num">${i.s}</td>
         <td>${comprarBadge}</td>
-        <td class="qty">${i.qty}</td>
+        <td class="qty"><input type="number" min="1" value="${i.qty}" onchange="editarQtyModal(${i.c},this.value)" style="width:56px;text-align:center;border:1px solid #e2e8f0;border-radius:4px;padding:3px;font-size:13px;font-weight:700"></td>
         <td class="num">${fmt(i.p)}</td>
-        <td class="total">${fmt(i.p*i.qty)}</td>
+        <td class="total" id="modal-total-${i.c}">${fmt(i.p*i.qty)}</td>
       </tr>`;
       textLines.push(`${i.c}\t${i.d}\t${gl}\t${i.cf||'—'}\t${i.e}\t${i.k||0}\t${i.s}\t${comprarTexto(i)}\t${i.qty}\t${fmt(i.p)}\t${fmt(i.p*i.qty)}`);
     });
@@ -887,6 +887,15 @@ function exportarPDF(){
   win.document.write(html);
   win.document.close();
   win.onload=()=>{ setTimeout(()=>{win.print();},400); };
+}
+
+function editarQtyModal(codigo,val){
+  const q=Math.max(1,parseInt(val)||1);
+  if(pedido[codigo]){
+    pedido[codigo].qty=q;
+    renderPedido();
+    exportarPedido();
+  }
 }
 
 function fecharModal(){document.getElementById('modal-exp').classList.add('hidden');}
