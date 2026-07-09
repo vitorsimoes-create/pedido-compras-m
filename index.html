@@ -1058,10 +1058,9 @@ function abrirPedidoAba(){
   if(Object.keys(pedido).length===0){alert('Pedido vazio. Adicione itens primeiro.');return;}
   // Build pedido por fornecedor
   const porForn={};
-  Object.entries(pedido).forEach(([cod,qty])=>{
-    const item=RAW_DATA.find(x=>x.c===+cod);
-    if(!item)return;
+  Object.values(pedido).forEach(item=>{
     const fn=item.f||'Sem fornecedor';
+    const qty=item.qty||1;
     if(!porForn[fn])porForn[fn]={nome:fn,itens:[]};
     porForn[fn].itens.push({item,qty});
   });
