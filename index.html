@@ -129,7 +129,18 @@
   </div>
 </div>
 
-<div class="main">
+<div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;display:flex;gap:4px">
+  <button id="tabbtn-montar" class="app-tab active" onclick="switchAppTab('montar')">🛒 Montar Pedido</button>
+  <button id="tabbtn-salvos" class="app-tab" onclick="switchAppTab('salvos')">📁 Pedidos Salvos <span id="salvos-count-badge" class="tab-count hidden">0</span></button>
+</div>
+<style>
+  .app-tab{padding:12px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:#64748b;border-bottom:3px solid transparent;transition:all .15s}
+  .app-tab:hover{color:#1a1a2e}
+  .app-tab.active{color:#3b82f6;border-bottom-color:#3b82f6}
+  .tab-count{background:#3b82f6;color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;margin-left:4px}
+</style>
+
+<div id="app-tab-montar" class="main">
   <div class="filters">
     <div class="filter-group" style="min-width:180px">
       <label>Fornecedor</label>
@@ -254,9 +265,18 @@
           <button class="btn btn-outline" style="flex:1" onclick="limparPedido()">Limpar</button>
           <button class="btn btn-success" style="flex:2" onclick="exportarPedido()">📋 Exportar pedido</button>
         </div>
+        <button class="btn" style="width:100%;margin-top:8px;background:#7c3aed;color:#fff" onclick="salvarPedidoFinalizado()">💾 Finalizar e Salvar Pedido</button>
       </div>
     </div>
   </div>
+</div>
+
+<div id="app-tab-salvos" class="main hidden">
+  <div style="background:#fff;border-radius:10px;padding:16px 20px;margin-bottom:16px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+    <h2 style="font-size:15px;font-weight:700;color:#1a1a2e">📁 Pedidos Salvos</h2>
+    <input type="text" id="busca-salvos" placeholder="Buscar por fornecedor ou data..." oninput="renderPedidosSalvos()" style="border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:13px;min-width:260px;outline:none">
+  </div>
+  <div id="lista-pedidos-salvos"></div>
 </div>
 
 <div class="modal-overlay hidden" id="modal-exp">
@@ -571,6 +591,7 @@ function renderPedido(){
   document.getElementById('stat-pedido-qtd').textContent=count;
   document.getElementById('stat-pedido-valor').textContent=fmt(total);
   document.getElementById('total-valor').textContent=fmt(total);
+  if(typeof updateChip==='function') updateChip();
 
   const lista=document.getElementById('pedido-lista');
   if(count===0){
@@ -704,11 +725,7 @@ function exportarPedido(){
   document.getElementById('modal-exp').classList.remove('hidden');
 }
 
-function exportarExcel(){
-  const d=document.getElementById('modal-exp')._pedidoData;
-  if(!d){alert('Abra o pedido primeiro.');return;}
-  const {bySupplier,total,data}=d;
-
+function buildCSV(bySupplier,total,data){
   let csv='\uFEFF';
   csv+='PEDIDO DE COMPRA MC MOTO\n';
   csv+=`Data:;${data}\n\n`;
@@ -730,20 +747,28 @@ function exportarExcel(){
     csv+=`Subtotal ${sup}:;;;;;;;;;;${sub}\n\n`;
   });
   csv+=`\nTOTAL GERAL;;;;;;;;;;${fmt(total).replace('.',',')}\n`;
+  return csv;
+}
 
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+function baixarArquivo(conteudo,tipo,nomeArquivo){
+  const blob=new Blob([conteudo],{type:tipo});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;
-  a.download=`pedido_mc_moto_${data.replace(/\//g,'-')}.csv`;
+  a.download=nomeArquivo;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-function exportarPDF(){
+function exportarExcel(){
   const d=document.getElementById('modal-exp')._pedidoData;
   if(!d){alert('Abra o pedido primeiro.');return;}
   const {bySupplier,total,data}=d;
+  const csv=buildCSV(bySupplier,total,data);
+  baixarArquivo(csv,'text/csv;charset=utf-8',`pedido_mc_moto_${data.replace(/\//g,'-')}.csv`);
+}
+
+function buildPDFHtml(bySupplier,total,data){
   const nForn=Object.keys(bySupplier).length;
   const nItens=Object.values(bySupplier).reduce((s,v)=>s+v.length,0);
 
@@ -849,14 +874,20 @@ ${body}
 
 </body>
 </html>`;
+  return html;
+}
 
+function exportarPDF(){
+  const d=document.getElementById('modal-exp')._pedidoData;
+  if(!d){alert('Abra o pedido primeiro.');return;}
+  const {bySupplier,total,data}=d;
+  const html=buildPDFHtml(bySupplier,total,data);
   const win=window.open('','_blank','width=1100,height=750');
   if(!win){alert('Permita popups para exportar PDF.');return;}
   win.document.write(html);
   win.document.close();
   win.onload=()=>{ setTimeout(()=>{win.print();},400); };
 }
-
 
 function fecharModal(){document.getElementById('modal-exp').classList.add('hidden');}
 function copiarPedido(){
@@ -865,26 +896,155 @@ function copiarPedido(){
 }
 
 document.getElementById('modal-exp').addEventListener('click',function(e){if(e.target===this)fecharModal();});
-init();
-</script>
 
+// ── Pedidos Salvos ──────────────────────────────────────────────────────────
+const LS_KEY='mc_moto_pedidos_salvos';
+let editingSavedId=null;
 
+function getPedidosSalvos(){
+  try{return JSON.parse(localStorage.getItem(LS_KEY)||'[]');}catch(e){return [];}
+}
+function setPedidosSalvos(arr){
+  localStorage.setItem(LS_KEY,JSON.stringify(arr));
+  atualizarBadgeSalvos();
+}
+function atualizarBadgeSalvos(){
+  const n=getPedidosSalvos().length;
+  const b=document.getElementById('salvos-count-badge');
+  b.textContent=n;
+  b.classList.toggle('hidden',n===0);
+}
 
-<div id="ped-chip" onclick="abrirPedidoAba()" style="
-  position:fixed;bottom:24px;right:24px;z-index:300;
-  background:#1a1a2e;color:#fff;
-  border-radius:30px;padding:10px 20px;
-  display:flex;align-items:center;gap:10px;
-  cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.35);
-  font-family:system-ui,sans-serif;font-size:13px;font-weight:600;
-  transition:background .15s;user-select:none"
-  onmouseover="this.style.background='#2d3a56'"
-  onmouseout="this.style.background='#1a1a2e'">
-  <span style="font-size:18px">🛒</span>
-  <span id="chip-label">Pedido de Compra</span>
-  <span id="chip-count" style="background:#3b82f6;border-radius:20px;padding:2px 8px;font-size:11px">0</span>
-</div>
-<script>
+function switchAppTab(tab){
+  document.getElementById('app-tab-montar').classList.toggle('hidden',tab!=='montar');
+  document.getElementById('app-tab-salvos').classList.toggle('hidden',tab!=='salvos');
+  document.getElementById('tabbtn-montar').classList.toggle('active',tab==='montar');
+  document.getElementById('tabbtn-salvos').classList.toggle('active',tab==='salvos');
+  if(tab==='salvos') renderPedidosSalvos();
+}
+
+function salvarPedidoFinalizado(){
+  const items=Object.values(pedido);
+  if(items.length===0){alert('Adicione itens ao pedido antes de salvar.');return;}
+  const agora=new Date();
+  const dataStr=agora.toLocaleDateString('pt-BR');
+  const horaStr=agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  let nome=prompt('Nome/identificação do pedido (opcional):', editingSavedId? (getPedidosSalvos().find(p=>p.id===editingSavedId)||{}).nome||'' : `Pedido ${dataStr}`);
+  if(nome===null) return; // cancelado
+  if(!nome.trim()) nome=`Pedido ${dataStr} ${horaStr}`;
+
+  const salvos=getPedidosSalvos();
+  const total=items.reduce((s,i)=>s+i.p*i.qty,0);
+  const nForn=new Set(items.map(i=>i.f)).size;
+
+  if(editingSavedId){
+    const idx=salvos.findIndex(p=>p.id===editingSavedId);
+    if(idx>-1){
+      salvos[idx]={...salvos[idx],nome,pedido:JSON.parse(JSON.stringify(pedido)),total,nItens:items.length,nForn,atualizadoEm:agora.toISOString()};
+    }
+  }else{
+    salvos.unshift({
+      id:'ped_'+Date.now(),
+      nome,
+      pedido:JSON.parse(JSON.stringify(pedido)),
+      total,nItens:items.length,nForn,
+      criadoEm:agora.toISOString(),
+      atualizadoEm:agora.toISOString()
+    });
+  }
+  setPedidosSalvos(salvos);
+  editingSavedId=null;
+  pedido={};
+  render();
+  if(typeof updateChip==='function') updateChip();
+  switchAppTab('salvos');
+  alert('Pedido salvo com sucesso!');
+}
+
+function renderPedidosSalvos(){
+  const cont=document.getElementById('lista-pedidos-salvos');
+  let salvos=getPedidosSalvos();
+  const busca=(document.getElementById('busca-salvos').value||'').toLowerCase().trim();
+  if(busca){
+    salvos=salvos.filter(p=>{
+      const fornNomes=Object.values(p.pedido).map(i=>(i.f||'').toLowerCase()).join(' ');
+      return p.nome.toLowerCase().includes(busca) || fornNomes.includes(busca) || p.criadoEm.slice(0,10).includes(busca);
+    });
+  }
+  atualizarBadgeSalvos();
+  if(salvos.length===0){
+    cont.innerHTML='<div class="empty" style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:40px">Nenhum pedido salvo ainda. Monte um pedido e clique em "Finalizar e Salvar Pedido".</div>';
+    return;
+  }
+  cont.innerHTML=salvos.map(p=>{
+    const criado=new Date(p.criadoEm).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    return `<div style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:16px 20px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-weight:700;font-size:14px;color:#1a1a2e">${escHtml(p.nome)}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:3px">${criado} · ${p.nItens} itens · ${p.nForn} fornecedor${p.nForn!==1?'es':''} · <strong style="color:#059669">${fmt(p.total)}</strong></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-outline" onclick="editarPedidoSalvo('${p.id}')">✏️ Editar</button>
+        <button class="btn btn-outline" onclick="exportarSalvoHTML('${p.id}')">🌐 HTML</button>
+        <button class="btn btn-outline" onclick="exportarSalvoExcel('${p.id}')">📊 Excel</button>
+        <button class="btn btn-outline" onclick="exportarSalvoPDF('${p.id}')">🖨️ PDF</button>
+        <button class="btn btn-danger" onclick="excluirPedidoSalvo('${p.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editarPedidoSalvo(id){
+  const p=getPedidosSalvos().find(x=>x.id===id);
+  if(!p) return;
+  pedido=JSON.parse(JSON.stringify(p.pedido));
+  editingSavedId=id;
+  render();
+  if(typeof updateChip==='function') updateChip();
+  switchAppTab('montar');
+}
+
+function excluirPedidoSalvo(id){
+  if(!confirm('Excluir este pedido salvo? Esta ação não pode ser desfeita.')) return;
+  setPedidosSalvos(getPedidosSalvos().filter(x=>x.id!==id));
+  renderPedidosSalvos();
+}
+
+function dadosSalvoParaExport(id){
+  const p=getPedidosSalvos().find(x=>x.id===id);
+  if(!p) return null;
+  const items=Object.values(p.pedido);
+  const bySupplier={};
+  items.forEach(i=>{ if(!bySupplier[i.f]) bySupplier[i.f]=[]; bySupplier[i.f].push(i); });
+  const data=new Date(p.criadoEm).toLocaleDateString('pt-BR');
+  return {bySupplier,total:p.total,data,nome:p.nome};
+}
+
+function exportarSalvoExcel(id){
+  const d=dadosSalvoParaExport(id);
+  if(!d) return;
+  const csv=buildCSV(d.bySupplier,d.total,d.data);
+  baixarArquivo(csv,'text/csv;charset=utf-8',`${d.nome.replace(/[^\wÀ-ú -]/g,'')}.csv`);
+}
+
+function exportarSalvoPDF(id){
+  const d=dadosSalvoParaExport(id);
+  if(!d) return;
+  const html=buildPDFHtml(d.bySupplier,d.total,d.data);
+  const win=window.open('','_blank','width=1100,height=750');
+  if(!win){alert('Permita popups para exportar PDF.');return;}
+  win.document.write(html);
+  win.document.close();
+  win.onload=()=>{ setTimeout(()=>{win.print();},400); };
+}
+
+function exportarSalvoHTML(id){
+  const d=dadosSalvoParaExport(id);
+  if(!d) return;
+  const html=buildPDFHtml(d.bySupplier,d.total,d.data);
+  baixarArquivo(html,'text/html;charset=utf-8',`${d.nome.replace(/[^\wÀ-ú -]/g,'')}.html`);
+}
+
 function abrirPedidoAba(){
   if(Object.keys(pedido).length===0){alert('Pedido vazio. Adicione itens primeiro.');return;}
   // Build pedido por fornecedor
@@ -958,19 +1118,30 @@ function abrirPedidoAba(){
   if(!w){alert('Permita popups para abrir o pedido em nova aba.');return;}
   w.document.write(html);w.document.close();
 }
-// Update chip counter whenever render runs
-const _origRender=typeof render==='function'?render:null;
 function updateChip(){
-  const qtd=Object.values(pedido).reduce((s,q)=>s+q,0);
-  const total=Object.entries(pedido).reduce((s,[cod,q])=>{const it=RAW_DATA.find(x=>x.c===+cod);return s+(it?(it.p||0)*q:0);},0);
+  const itens=Object.values(pedido);
+  const qtd=itens.reduce((s,i)=>s+(i.qty||1),0);
+  const total=itens.reduce((s,i)=>s+(i.p||0)*(i.qty||1),0);
   document.getElementById('chip-count').textContent=qtd;
   document.getElementById('chip-label').textContent=qtd>0?`Ver Pedido · R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`:'Pedido de Compra';
 }
-// Patch addItem / removeItem / limparPedido to call updateChip
-const _oAdd=window.addItem,_oRem=window.removeItem,_oLim=window.limparPedido,_oSetQ=window.setQty;
-window.addItem=function(){_oAdd&&_oAdd.apply(this,arguments);updateChip();};
-window.removeItem=function(){_oRem&&_oRem.apply(this,arguments);updateChip();};
-window.limparPedido=function(){_oLim&&_oLim.apply(this,arguments);updateChip();};
-window.setQty=function(){_oSetQ&&_oSetQ.apply(this,arguments);updateChip();};
+
+atualizarBadgeSalvos();
+init();
 </script>
+
+<div id="ped-chip" onclick="abrirPedidoAba()" style="
+  position:fixed;bottom:24px;right:24px;z-index:300;
+  background:#1a1a2e;color:#fff;
+  border-radius:30px;padding:10px 20px;
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.35);
+  font-family:system-ui,sans-serif;font-size:13px;font-weight:600;
+  transition:background .15s;user-select:none"
+  onmouseover="this.style.background='#2d3a56'"
+  onmouseout="this.style.background='#1a1a2e'">
+  <span style="font-size:18px">🛒</span>
+  <span id="chip-label">Pedido de Compra</span>
+  <span id="chip-count" style="background:#3b82f6;border-radius:20px;padding:2px 8px;font-size:11px">0</span>
+</div>
 </body>
