@@ -290,6 +290,7 @@
     </div>
     <div class="modal-body" id="modal-content"></div>
     <div class="modal-foot">
+      <button class="btn" style="font-size:13px;min-width:160px;background:#7c3aed;color:#fff" onclick="salvarPedidoFinalizado()">💾 Salvar Pedido</button>
       <button class="btn btn-success" onclick="exportarExcel()" style="font-size:13px;min-width:160px">⬇ Baixar Excel (.csv)</button>
       <button class="btn btn-primary" onclick="exportarPDF()" style="font-size:13px;min-width:160px">🖨 Exportar PDF</button>
       <button class="btn btn-outline" onclick="copiarPedido()" style="font-size:13px;min-width:140px">📋 Copiar texto</button>
@@ -966,6 +967,8 @@ function salvarPedidoFinalizado(){
   pedido={};
   render();
   if(typeof updateChip==='function') updateChip();
+  const modal=document.getElementById('modal-exp');
+  if(modal && !modal.classList.contains('hidden')) fecharModal();
   switchAppTab('salvos');
   alert('Pedido salvo com sucesso!');
 }
@@ -1080,15 +1083,15 @@ function abrirPedidoAba(){
         <td style="text-align:right">${fmtR(item.p||0)}</td>
         <td style="text-align:center;font-weight:700">${item.e}</td>
         <td style="text-align:center;font-weight:700;color:#1d4ed8">${item.k||0}</td>
-        <td style="text-align:center;font-weight:700;color:#7c3aed">${item.s||0}</td>
+        <td style="text-align:center;font-weight:700;color:#7c3aed"><input type="number" min="0" class="sug-input" data-cod="${item.c}" value="${item.s||0}" style="width:56px;text-align:center;border:1px solid #ddd6fe;border-radius:4px;padding:3px;font-weight:700;color:#7c3aed"></td>
         <td>${comprar}</td>
-        <td style="text-align:center;font-weight:700;font-size:15px">${qty}</td>
-        <td style="text-align:right;font-weight:700;color:#059669">${fmtR(tot)}</td>
+        <td style="text-align:center;font-weight:700;font-size:15px"><input type="number" min="1" class="qty-input" data-cod="${item.c}" data-preco="${item.p||0}" data-bloco="${escHtml(fn.nome)}" value="${qty}" style="width:60px;text-align:center;border:1px solid #e2e8f0;border-radius:4px;padding:3px;font-weight:700" onchange="recalc()"></td>
+        <td style="text-align:right;font-weight:700;color:#059669" id="tot-${item.c}">${fmtR(tot)}</td>
       </tr>`;
     });
-    blocos+=`<div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+    blocos+=`<div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden" data-bloconome="${escHtml(fn.nome)}">
       <div style="background:#1e40af;color:#fff;padding:8px 14px;font-weight:700;font-size:13px;display:flex;justify-content:space-between">
-        <span>📦 ${fn.nome}</span><span>${fmtR(sub)}</span>
+        <span>📦 ${fn.nome}</span><span id="sub-${escHtml(fn.nome)}">${fmtR(sub)}</span>
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="background:#dbeafe">
@@ -1104,23 +1107,64 @@ function abrirPedidoAba(){
           <th style="padding:6px 10px;text-align:right;font-size:10px;color:#1e3a8a;text-transform:uppercase">Total</th>
         </tr></thead>
         <tbody>${rows}</tbody>
-        <tr><td colspan="10" style="text-align:right;padding:6px 10px;background:#f0fdf4;font-weight:700;color:#065f46;font-size:12px">Subtotal: ${fmtR(sub)}</td></tr>
+        <tr><td colspan="10" style="text-align:right;padding:6px 10px;background:#f0fdf4;font-weight:700;color:#065f46;font-size:12px">Subtotal: <span id="subrow-${escHtml(fn.nome)}">${fmtR(sub)}</span></td></tr>
       </table>
     </div>`;
   });
   const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Pedido de Compra — MC MOTO</title>
   <style>body{font-family:system-ui,sans-serif;background:#f4f5f7;color:#1a1a2e;padding:0;margin:0}
-  .hdr{background:#1a1a2e;color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+  .hdr{background:#1a1a2e;color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
   .hdr h1{font-size:18px;font-weight:700;margin:0}
   .main{padding:20px 24px;max-width:1300px;margin:0 auto}
   table td,table th{border-bottom:1px solid #f1f5f9}
   .grand{text-align:right;font-size:22px;font-weight:800;color:#059669;margin-top:16px;padding-top:12px;border-top:3px solid #1a1a2e}
   .btn{padding:8px 18px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600}
+  @media print{input{border:none!important;background:none!important}}
   </style></head><body>
   <div class="hdr"><h1>🛒 Pedido de Compra — MC MOTO</h1>
-  <button class="btn" style="background:#3b82f6;color:#fff" onclick="window.print()">🖨️ Imprimir</button></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn" style="background:#7c3aed;color:#fff" onclick="salvarNoPainel()">💾 Salvar Pedido</button>
+    <button class="btn" style="background:#3b82f6;color:#fff" onclick="window.print()">🖨️ Imprimir</button>
+  </div></div>
   <div class="main">${blocos}
-  <div class="grand">Total geral: ${fmtR(grand)}</div></div>
+  <div class="grand">Total geral: <span id="grand-total">${fmtR(grand)}</span></div></div>
+  <script>
+  const fmtR2=v=>'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  function recalc(){
+    let grand=0;
+    document.querySelectorAll('[data-bloconome]').forEach(bloco=>{
+      let sub=0;
+      bloco.querySelectorAll('.qty-input').forEach(inp=>{
+        const q=Math.max(1,parseInt(inp.value)||1);
+        inp.value=q;
+        const preco=parseFloat(inp.dataset.preco)||0;
+        const tot=q*preco;
+        sub+=tot; grand+=tot;
+        const totCell=document.getElementById('tot-'+inp.dataset.cod);
+        if(totCell) totCell.textContent=fmtR2(tot);
+      });
+      const nome=bloco.getAttribute('data-bloconome');
+      const subEl=document.getElementById('sub-'+nome);
+      const subRowEl=document.getElementById('subrow-'+nome);
+      if(subEl) subEl.textContent=fmtR2(sub);
+      if(subRowEl) subRowEl.textContent=fmtR2(sub);
+    });
+    document.getElementById('grand-total').textContent=fmtR2(grand);
+  }
+  function salvarNoPainel(){
+    if(!window.opener || window.opener.closed){alert('Não foi possível conectar à aba principal do painel. Reabra esta tela clicando em "Ver Pedido".');return;}
+    document.querySelectorAll('.qty-input').forEach(inp=>{
+      const cod=+inp.dataset.cod, q=Math.max(1,parseInt(inp.value)||1);
+      if(window.opener.pedido[cod]) window.opener.pedido[cod].qty=q;
+    });
+    document.querySelectorAll('.sug-input').forEach(inp=>{
+      const cod=+inp.dataset.cod, s=Math.max(0,parseInt(inp.value)||0);
+      if(window.opener.pedido[cod]) window.opener.pedido[cod].s=s;
+    });
+    window.opener.salvarPedidoFinalizado();
+    window.opener.focus();
+  }
+  <\/script>
   </body></html>`;
   const w=window.open('','_blank');
   if(!w){alert('Permita popups para abrir o pedido em nova aba.');return;}
