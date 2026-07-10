@@ -131,6 +131,7 @@
 
 <div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;display:flex;gap:4px">
   <button id="tabbtn-montar" class="app-tab active" onclick="switchAppTab('montar')">🛒 Montar Pedido</button>
+  <button id="tabbtn-cotacao" class="app-tab" onclick="switchAppTab('cotacao')">📊 Cotação <span id="cotacao-sel-badge" class="tab-count hidden">0</span></button>
   <button id="tabbtn-salvos" class="app-tab" onclick="switchAppTab('salvos')">📁 Pedidos Salvos <span id="salvos-count-badge" class="tab-count hidden">0</span></button>
 </div>
 <style>
@@ -229,6 +230,7 @@
         <table>
           <thead>
             <tr>
+              <th title="Selecionar para cotação">Cotar</th>
               <th>Cód.</th>
               <th>Descrição</th>
               <th>Grupo</th>
@@ -277,6 +279,27 @@
     <input type="text" id="busca-salvos" placeholder="Buscar por fornecedor ou data..." oninput="renderPedidosSalvos()" style="border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:13px;min-width:260px;outline:none">
   </div>
   <div id="lista-pedidos-salvos"></div>
+</div>
+
+<div id="app-tab-cotacao" class="main hidden">
+  <div style="background:#fff;border-radius:10px;padding:16px 20px;margin-bottom:16px;border:1px solid #e2e8f0">
+    <h2 style="font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:12px">📊 Itens selecionados para cotação (<span id="cotacao-sel-count">0</span>)</h2>
+    <div id="cotacao-sel-lista" style="margin-bottom:14px"></div>
+    <div style="border-top:1px solid #e2e8f0;padding-top:14px">
+      <label style="font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px">Enviar cotação para quais fornecedores?</label>
+      <div id="cotacao-forn-checklist" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;max-height:160px;overflow-y:auto;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+        <input type="text" id="cotacao-forn-outro" placeholder="Adicionar fornecedor não listado..." style="border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:13px;flex:1;outline:none">
+        <button class="btn btn-outline" onclick="adicionarFornecedorCotacaoManual()">+ Adicionar</button>
+      </div>
+      <button class="btn" style="background:#7c3aed;color:#fff" onclick="criarCotacao()">📤 Gerar Cotação</button>
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:10px;padding:16px 20px;border:1px solid #e2e8f0">
+    <h2 style="font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:12px">🗂️ Cotações Criadas</h2>
+    <div id="lista-cotacoes"></div>
+  </div>
 </div>
 
 <div class="modal-overlay hidden" id="modal-exp">
@@ -361,6 +384,7 @@ const PAGE_SIZE = 50;
 let page = 0;
 let filtered = [];
 let pedido = {};
+let cotacaoSelecionados = {};
 
 function fmt(n){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0)}
 function fmtN(n){return new Intl.NumberFormat('pt-BR').format(n||0)}
@@ -509,7 +533,7 @@ function render(){
 
   const tbody=document.getElementById('tbl-body');
   if(pageItems.length===0){
-    tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:#94a3b8">Nenhum item encontrado</td></tr>';
+    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:30px;color:#94a3b8">Nenhum item encontrado</td></tr>';
   }else{
     tbody.innerHTML=pageItems.map(item=>{
       const inPedido=pedido[item.c];
@@ -531,7 +555,9 @@ function render(){
         : semSug
           ? `<button class="btn" style="padding:4px 10px;font-size:12px;background:#f59e0b;color:#fff;border:none" title="Adicionar ao pedido (sugestão zero)" onclick="event.stopPropagation();toggleItem(${item.c})">+ manual</button>`
           : `<button class="btn btn-primary" style="padding:4px 10px;font-size:12px" onclick="event.stopPropagation();toggleItem(${item.c})">+</button>`;
+      const inCotacao=cotacaoSelecionados[item.c];
       return `<tr class="${inPedido?'selected':''}" onclick="toggleItem(${item.c})">
+        <td onclick="event.stopPropagation()"><input type="checkbox" ${inCotacao?'checked':''} onchange="toggleCotacaoItem(${item.c})" style="width:16px;height:16px;cursor:pointer"></td>
         <td><span style="font-size:11px;color:#64748b">${item.c}</span></td>
         <td class="desc" title="${escHtml(item.d)}">${highlight(item.d,terms)}</td>
         <td><span class="grupo-badge gb-${gc}">${gl}</span></td>
@@ -928,9 +954,12 @@ function atualizarBadgeSalvos(){
 function switchAppTab(tab){
   document.getElementById('app-tab-montar').classList.toggle('hidden',tab!=='montar');
   document.getElementById('app-tab-salvos').classList.toggle('hidden',tab!=='salvos');
+  document.getElementById('app-tab-cotacao').classList.toggle('hidden',tab!=='cotacao');
   document.getElementById('tabbtn-montar').classList.toggle('active',tab==='montar');
   document.getElementById('tabbtn-salvos').classList.toggle('active',tab==='salvos');
+  document.getElementById('tabbtn-cotacao').classList.toggle('active',tab==='cotacao');
   if(tab==='salvos') renderPedidosSalvos();
+  if(tab==='cotacao') renderCotacaoTab();
 }
 
 function salvarPedidoFinalizado(){
@@ -1176,6 +1205,254 @@ function updateChip(){
   const total=itens.reduce((s,i)=>s+(i.p||0)*(i.qty||1),0);
   document.getElementById('chip-count').textContent=qtd;
   document.getElementById('chip-label').textContent=qtd>0?`Ver Pedido · R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`:'Pedido de Compra';
+}
+
+// ── Cotação ──────────────────────────────────────────────────────────────
+const LS_COTACOES='mc_moto_cotacoes';
+let fornecedoresCotacaoSelecionados=new Set();
+
+function getCotacoes(){
+  try{return JSON.parse(localStorage.getItem(LS_COTACOES)||'[]');}catch(e){return [];}
+}
+function setCotacoes(arr){
+  localStorage.setItem(LS_COTACOES,JSON.stringify(arr));
+}
+function atualizarBadgeCotacaoSel(){
+  const n=Object.keys(cotacaoSelecionados).length;
+  const b=document.getElementById('cotacao-sel-badge');
+  b.textContent=n;
+  b.classList.toggle('hidden',n===0);
+}
+
+function toggleCotacaoItem(codigo){
+  const item=RAW_DATA.find(x=>x.c===codigo);
+  if(!item) return;
+  if(cotacaoSelecionados[codigo]) delete cotacaoSelecionados[codigo];
+  else cotacaoSelecionados[codigo]={...item,qty:item.s>0?item.s:1};
+  atualizarBadgeCotacaoSel();
+  render();
+}
+
+function renderCotacaoTab(){
+  atualizarBadgeCotacaoSel();
+  renderCotacaoSelecionados();
+  renderChecklistFornecedores();
+  renderCotacoesCriadas();
+}
+
+function renderCotacaoSelecionados(){
+  const itens=Object.values(cotacaoSelecionados);
+  document.getElementById('cotacao-sel-count').textContent=itens.length;
+  const cont=document.getElementById('cotacao-sel-lista');
+  if(itens.length===0){
+    cont.innerHTML='<div class="empty">Nenhum item selecionado. Marque a caixa "Cotar" na tabela de "Montar Pedido" para adicionar itens aqui.</div>';
+    return;
+  }
+  cont.innerHTML=`<table style="width:100%;font-size:13px;border-collapse:collapse">
+    <thead><tr style="background:#f8fafc">
+      <th style="padding:6px 10px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase">Cód.</th>
+      <th style="padding:6px 10px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase">Descrição</th>
+      <th style="padding:6px 10px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase">Cód. Fab.</th>
+      <th style="padding:6px 10px;text-align:center;font-size:11px;color:#64748b;text-transform:uppercase">Qtd p/ cotação</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${itens.map(i=>`<tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:6px 10px;color:#94a3b8;font-size:11px">${i.c}</td>
+      <td style="padding:6px 10px">${escHtml(i.d)}</td>
+      <td style="padding:6px 10px;color:#94a3b8;font-size:11px">${escHtml(i.cf||'—')}</td>
+      <td style="padding:6px 10px;text-align:center"><input type="number" min="1" value="${i.qty}" onchange="cotacaoSelecionados[${i.c}].qty=Math.max(1,parseInt(this.value)||1)" style="width:60px;text-align:center;border:1px solid #e2e8f0;border-radius:4px;padding:3px"></td>
+      <td style="padding:6px 10px;text-align:right"><button class="btn btn-danger" onclick="toggleCotacaoItem(${i.c});renderCotacaoTab()">✕</button></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function renderChecklistFornecedores(){
+  const nomes=[...new Set(RAW_DATA.map(x=>x.f).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const cont=document.getElementById('cotacao-forn-checklist');
+  cont.innerHTML=nomes.map(n=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:4px 10px;cursor:pointer">
+    <input type="checkbox" ${fornecedoresCotacaoSelecionados.has(n)?'checked':''} onchange="toggleFornecedorCotacao('${n.replace(/'/g,"\\'")}')">${escHtml(n)}
+  </label>`).join('');
+}
+
+function toggleFornecedorCotacao(nome){
+  if(fornecedoresCotacaoSelecionados.has(nome)) fornecedoresCotacaoSelecionados.delete(nome);
+  else fornecedoresCotacaoSelecionados.add(nome);
+}
+
+function adicionarFornecedorCotacaoManual(){
+  const inp=document.getElementById('cotacao-forn-outro');
+  const nome=inp.value.trim();
+  if(!nome) return;
+  fornecedoresCotacaoSelecionados.add(nome);
+  inp.value='';
+  renderChecklistFornecedores();
+  // marca visualmente mesmo não estando na lista padrão
+  const cont=document.getElementById('cotacao-forn-checklist');
+  if(![...RAW_DATA].some(x=>x.f===nome)){
+    cont.insertAdjacentHTML('beforeend',`<label style="display:flex;align-items:center;gap:5px;font-size:12px;background:#faf5ff;border:1px solid #ddd6fe;border-radius:20px;padding:4px 10px;cursor:pointer">
+      <input type="checkbox" checked onchange="toggleFornecedorCotacao('${nome.replace(/'/g,"\\'")}')">${escHtml(nome)} <span style="color:#7c3aed;font-size:10px">(novo)</span>
+    </label>`);
+  }
+}
+
+function criarCotacao(){
+  const itens=Object.values(cotacaoSelecionados);
+  if(itens.length===0){alert('Selecione ao menos um item para cotação.');return;}
+  if(fornecedoresCotacaoSelecionados.size===0){alert('Selecione ao menos um fornecedor para enviar a cotação.');return;}
+  const nome=prompt('Nome/identificação desta cotação:',`Cotação ${new Date().toLocaleDateString('pt-BR')}`);
+  if(nome===null) return;
+  const cotacoes=getCotacoes();
+  cotacoes.unshift({
+    id:'cot_'+Date.now(),
+    nome:nome.trim()||`Cotação ${new Date().toLocaleDateString('pt-BR')}`,
+    criadoEm:new Date().toISOString(),
+    itens:itens.map(i=>({c:i.c,d:i.d,cf:i.cf,g:i.g,p:i.p,qty:i.qty})),
+    fornecedores:[...fornecedoresCotacaoSelecionados],
+    respostas:{}
+  });
+  setCotacoes(cotacoes);
+  cotacaoSelecionados={};
+  fornecedoresCotacaoSelecionados=new Set();
+  atualizarBadgeCotacaoSel();
+  render();
+  renderCotacaoTab();
+  alert('Cotação criada! Agora baixe a planilha de cada fornecedor na lista abaixo e envie para eles preencherem os preços.');
+}
+
+function baixarPlanilhaCotacao(cotId,fornecedor){
+  const cot=getCotacoes().find(c=>c.id===cotId);
+  if(!cot) return;
+  let csv='﻿';
+  csv+=`# COTAÇÃO DE PREÇOS - ${cot.nome}\n`;
+  csv+=`# Fornecedor: ${fornecedor}\n`;
+  csv+=`# Preencha a coluna "Preço Unit. (R$)" e devolva este arquivo\n`;
+  csv+=`# NÃO altere a coluna Código\n\n`;
+  csv+='Código;Descrição;Cód. Fabricante;Qtd;Preço Unit. (R$)\n';
+  cot.itens.forEach(i=>{
+    const desc=String(i.d||'').replace(/;/g,' ');
+    csv+=`${i.c};"${desc}";="${i.cf||'—'}";${i.qty};\n`;
+  });
+  baixarArquivo(csv,'text/csv;charset=utf-8',`cotacao_${cot.nome.replace(/[^\wÀ-ú -]/g,'')}_${fornecedor.replace(/[^\wÀ-ú -]/g,'')}.csv`);
+}
+
+function importarRespostasCotacao(cotId,fornecedor,input){
+  const file=input.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const text=e.target.result;
+    const linhas=text.split(/\r?\n/);
+    const precos={};
+    linhas.forEach(linha=>{
+      if(!linha || linha.startsWith('#') || linha.startsWith('Código')) return;
+      const cols=linha.split(';');
+      if(cols.length<5) return;
+      const cod=parseInt(cols[0]);
+      if(isNaN(cod)) return;
+      let precoStr=cols[4].replace(/^="?|"?$/g,'').replace(/"/g,'').trim().replace(/\./g,'').replace(',','.');
+      const preco=parseFloat(precoStr);
+      if(!isNaN(preco) && preco>0) precos[cod]=preco;
+    });
+    if(Object.keys(precos).length===0){alert('Nenhum preço válido encontrado no arquivo. Verifique se a coluna "Preço Unit." foi preenchida.');return;}
+    const cotacoes=getCotacoes();
+    const cot=cotacoes.find(c=>c.id===cotId);
+    if(!cot) return;
+    if(!cot.respostas[fornecedor]) cot.respostas[fornecedor]={};
+    Object.assign(cot.respostas[fornecedor],precos);
+    setCotacoes(cotacoes);
+    renderCotacoesCriadas();
+    alert(`${Object.keys(precos).length} preço(s) importado(s) de ${fornecedor}!`);
+  };
+  reader.readAsText(file,'UTF-8');
+  input.value='';
+}
+
+function excluirCotacao(cotId){
+  if(!confirm('Excluir esta cotação? Esta ação não pode ser desfeita.')) return;
+  setCotacoes(getCotacoes().filter(c=>c.id!==cotId));
+  renderCotacoesCriadas();
+}
+
+function comprarMaisBarato(cotId){
+  const cot=getCotacoes().find(c=>c.id===cotId);
+  if(!cot) return;
+  let adicionados=0;
+  cot.itens.forEach(i=>{
+    let melhorForn=null, melhorPreco=Infinity;
+    cot.fornecedores.forEach(f=>{
+      const preco=cot.respostas[f]?.[i.c];
+      if(preco!=null && preco<melhorPreco){melhorPreco=preco;melhorForn=f;}
+    });
+    if(melhorForn){
+      const itemCat=RAW_DATA.find(x=>x.c===i.c)||{};
+      pedido[i.c]={...itemCat,c:i.c,d:i.d,cf:i.cf,g:i.g,f:melhorForn,p:melhorPreco,qty:i.qty};
+      adicionados++;
+    }
+  });
+  if(adicionados===0){alert('Nenhum fornecedor respondeu preços para os itens desta cotação ainda.');return;}
+  render();
+  if(typeof updateChip==='function') updateChip();
+  switchAppTab('montar');
+  alert(`${adicionados} item(ns) adicionados ao pedido pelo menor preço cotado!`);
+}
+
+function renderCotacoesCriadas(){
+  const cont=document.getElementById('lista-cotacoes');
+  const cotacoes=getCotacoes();
+  if(cotacoes.length===0){
+    cont.innerHTML='<div class="empty">Nenhuma cotação criada ainda.</div>';
+    return;
+  }
+  cont.innerHTML=cotacoes.map(cot=>{
+    const criado=new Date(cot.criadoEm).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const fornRows=cot.fornecedores.map(f=>{
+      const nRespostas=Object.keys(cot.respostas[f]||{}).length;
+      const inputId=`imp-${cot.id}-${f.replace(/[^\w]/g,'')}`;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8fafc;border-radius:6px;margin-bottom:4px;flex-wrap:wrap">
+        <span style="flex:1;font-size:12px;font-weight:600;min-width:140px">📦 ${escHtml(f)}</span>
+        <span style="font-size:11px;color:${nRespostas>0?'#059669':'#94a3b8'}">${nRespostas>0?`✅ ${nRespostas} preço(s) recebido(s)`:'⏳ aguardando resposta'}</span>
+        <button class="btn btn-outline" style="font-size:11px;padding:4px 8px" onclick="baixarPlanilhaCotacao('${cot.id}','${f.replace(/'/g,"\\'")}')">⬇ Baixar planilha</button>
+        <label class="btn btn-outline" style="font-size:11px;padding:4px 8px;cursor:pointer;margin:0">📥 Importar respostas<input type="file" accept=".csv" id="${inputId}" style="display:none" onchange="importarRespostasCotacao('${cot.id}','${f.replace(/'/g,"\\'")}',this)"></label>
+      </div>`;
+    }).join('');
+
+    const temRespostas=cot.fornecedores.some(f=>Object.keys(cot.respostas[f]||{}).length>0);
+    let tabelaComparativa='';
+    if(temRespostas){
+      tabelaComparativa=`<div style="overflow-x:auto;margin-top:10px">
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <thead><tr style="background:#dbeafe">
+            <th style="padding:6px 8px;text-align:left;font-size:10px;color:#1e3a8a;text-transform:uppercase">Item</th>
+            ${cot.fornecedores.map(f=>`<th style="padding:6px 8px;text-align:center;font-size:10px;color:#1e3a8a;text-transform:uppercase">${escHtml(f)}</th>`).join('')}
+          </tr></thead>
+          <tbody>${cot.itens.map(i=>{
+            const precos=cot.fornecedores.map(f=>cot.respostas[f]?.[i.c]);
+            const min=Math.min(...precos.filter(p=>p!=null));
+            return `<tr style="border-bottom:1px solid #f1f5f9">
+              <td style="padding:6px 8px">${escHtml(i.d)}</td>
+              ${precos.map(p=>p!=null
+                ? `<td style="padding:6px 8px;text-align:center;${p===min?'background:#dcfce7;color:#166534;font-weight:700':''}">${fmt(p)}</td>`
+                : `<td style="padding:6px 8px;text-align:center;color:#cbd5e1">—</td>`
+              ).join('')}
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>
+      <button class="btn" style="background:#059669;color:#fff;margin-top:10px" onclick="comprarMaisBarato('${cot.id}')">🛒 Comprar pelo menor preço de cada item</button>`;
+    }
+
+    return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <div style="font-weight:700;font-size:14px">${escHtml(cot.nome)}</div>
+          <div style="font-size:11px;color:#64748b">${criado} · ${cot.itens.length} itens · ${cot.fornecedores.length} fornecedor(es)</div>
+        </div>
+        <button class="btn btn-danger" onclick="excluirCotacao('${cot.id}')">🗑️</button>
+      </div>
+      ${fornRows}
+      ${tabelaComparativa}
+    </div>`;
+  }).join('');
 }
 
 atualizarBadgeSalvos();
