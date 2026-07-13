@@ -127,7 +127,10 @@
     <h1>📦 Painel de Pedidos de Compra</h1>
     <div class="sub">Selecione itens por fornecedor, grupo ou busca — monte seu pedido</div>
   </div>
-  <div style="margin-left:auto;font-size:12px;opacity:.65">Página atualizada em <strong id="data-atualizacao">10/07/2026</strong></div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12px;opacity:.85">
+    <span>Página atualizada em <strong id="data-atualizacao">10/07/2026</strong></span>
+    <button class="btn btn-outline" style="font-size:11px;padding:5px 10px" onclick="pedirAtualizacao()">🔄 Pedir atualização</button>
+  </div>
 </div>
 
 <div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;display:flex;gap:4px">
@@ -927,6 +930,19 @@ function editarQtyModal(codigo,val){
 }
 
 function fecharModal(){document.getElementById('modal-exp').classList.add('hidden');}
+
+function pedirAtualizacao(){
+  const msg='Atualize o painel de pedidos (index.html) com os dados mais recentes de estoque, vendas e preços do banco de dados.';
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(msg).then(()=>{
+      alert('Mensagem copiada!\n\nCole no chat com o Claude para pedir a atualização do painel:\n\n"'+msg+'"');
+    }).catch(()=>{
+      alert('Cole esta mensagem no chat com o Claude para pedir a atualização:\n\n"'+msg+'"');
+    });
+  }else{
+    alert('Cole esta mensagem no chat com o Claude para pedir a atualização:\n\n"'+msg+'"');
+  }
+}
 function copiarPedido(){
   const txt=document.getElementById('modal-exp')._textContent||'';
   navigator.clipboard.writeText(txt).then(()=>alert('Copiado para a área de transferência!'));
