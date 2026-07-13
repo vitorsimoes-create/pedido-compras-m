@@ -137,6 +137,7 @@
   <button id="tabbtn-montar" class="app-tab active" onclick="switchAppTab('montar')">🛒 Montar Pedido</button>
   <button id="tabbtn-cotacao" class="app-tab" onclick="switchAppTab('cotacao')">📊 Cotação <span id="cotacao-sel-badge" class="tab-count hidden">0</span></button>
   <button id="tabbtn-salvos" class="app-tab" onclick="switchAppTab('salvos')">📁 Pedidos Salvos <span id="salvos-count-badge" class="tab-count hidden">0</span></button>
+  <button id="tabbtn-recebimentos" class="app-tab" onclick="switchAppTab('recebimentos')">📦 Recebimentos</button>
 </div>
 <style>
   .app-tab{padding:12px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:#64748b;border-bottom:3px solid transparent;transition:all .15s}
@@ -303,6 +304,70 @@
   <div style="background:#fff;border-radius:10px;padding:16px 20px;border:1px solid #e2e8f0">
     <h2 style="font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:12px">🗂️ Cotações Criadas</h2>
     <div id="lista-cotacoes"></div>
+  </div>
+</div>
+
+<div id="app-tab-recebimentos" class="main hidden">
+  <div style="background:#fff;border-radius:10px;padding:16px 20px;margin-bottom:16px;border:1px solid #e2e8f0">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+      <h2 style="font-size:15px;font-weight:700;color:#1a1a2e">📦 Mercadorias Recebidas de Fornecedores</h2>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="month" id="receb-mes" onchange="renderRecebimentosTab()" style="border:1px solid #e2e8f0;border-radius:6px;padding:7px 10px;font-size:13px;outline:none">
+      </div>
+    </div>
+    <div class="stats" style="margin-bottom:0">
+      <div class="stat blue">
+        <div class="val" id="receb-total-mes">R$ 0,00</div>
+        <div class="lbl">Recebido no mês</div>
+      </div>
+      <div class="stat purple">
+        <div class="val" style="display:flex;align-items:center;gap:6px">
+          <span id="receb-meta-display">R$ 0,00</span>
+          <button onclick="editarMetaMes()" title="Editar meta" style="background:none;border:none;cursor:pointer;font-size:13px;color:#7c3aed">✏️</button>
+        </div>
+        <div class="lbl">Meta de compras do mês</div>
+      </div>
+      <div class="stat" id="receb-stat-saldo">
+        <div class="val" id="receb-saldo">R$ 0,00</div>
+        <div class="lbl" id="receb-saldo-lbl">Restante até a meta</div>
+      </div>
+      <div class="stat amber">
+        <div class="val" id="receb-pct">0%</div>
+        <div class="lbl">Da meta atingida</div>
+      </div>
+    </div>
+    <div style="background:#f1f5f9;border-radius:20px;height:10px;margin-top:14px;overflow:hidden">
+      <div id="receb-progress-bar" style="height:100%;width:0%;background:#3b82f6;transition:width .3s"></div>
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:10px;padding:16px 20px;margin-bottom:16px;border:1px solid #e2e8f0">
+    <h2 style="font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:12px">+ Registrar recebimento</h2>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="filter-group" style="min-width:200px">
+        <label>Fornecedor</label>
+        <input type="text" id="receb-fornecedor" list="receb-fornecedores-list" placeholder="Nome do fornecedor">
+        <datalist id="receb-fornecedores-list"></datalist>
+      </div>
+      <div class="filter-group" style="min-width:150px">
+        <label>Data de recebimento</label>
+        <input type="date" id="receb-data">
+      </div>
+      <div class="filter-group" style="min-width:150px">
+        <label>Valor total (R$)</label>
+        <input type="number" id="receb-valor" min="0" step="0.01" placeholder="0,00">
+      </div>
+      <div class="filter-group" style="flex:1;min-width:200px">
+        <label>Observação (nota fiscal, itens, etc.)</label>
+        <input type="text" id="receb-obs" placeholder="Opcional">
+      </div>
+      <button class="btn btn-success" style="height:38px" onclick="adicionarRecebimento()">+ Adicionar</button>
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;overflow:hidden">
+    <div class="table-header"><h2 id="receb-lista-titulo">Recebimentos do mês</h2></div>
+    <div id="lista-recebimentos"></div>
   </div>
 </div>
 
@@ -972,11 +1037,14 @@ function switchAppTab(tab){
   document.getElementById('app-tab-montar').classList.toggle('hidden',tab!=='montar');
   document.getElementById('app-tab-salvos').classList.toggle('hidden',tab!=='salvos');
   document.getElementById('app-tab-cotacao').classList.toggle('hidden',tab!=='cotacao');
+  document.getElementById('app-tab-recebimentos').classList.toggle('hidden',tab!=='recebimentos');
   document.getElementById('tabbtn-montar').classList.toggle('active',tab==='montar');
   document.getElementById('tabbtn-salvos').classList.toggle('active',tab==='salvos');
   document.getElementById('tabbtn-cotacao').classList.toggle('active',tab==='cotacao');
+  document.getElementById('tabbtn-recebimentos').classList.toggle('active',tab==='recebimentos');
   if(tab==='salvos') renderPedidosSalvos();
   if(tab==='cotacao') renderCotacaoTab();
+  if(tab==='recebimentos') renderRecebimentosTab();
 }
 
 function salvarPedidoFinalizado(){
@@ -1601,6 +1669,152 @@ function renderCotacoesCriadas(){
       ${tabelaComparativa}
     </div>`;
   }).join('');
+}
+
+// ── Recebimentos de fornecedores + meta mensal ────────────────────────────────
+const LS_RECEBIMENTOS='mc_moto_recebimentos';
+const LS_METAS='mc_moto_metas_mensais';
+
+function getRecebimentos(){
+  try{return JSON.parse(localStorage.getItem(LS_RECEBIMENTOS)||'[]');}catch(e){return [];}
+}
+function setRecebimentos(arr){
+  localStorage.setItem(LS_RECEBIMENTOS,JSON.stringify(arr));
+}
+function getMetas(){
+  try{return JSON.parse(localStorage.getItem(LS_METAS)||'{}');}catch(e){return {};}
+}
+function setMetas(obj){
+  localStorage.setItem(LS_METAS,JSON.stringify(obj));
+}
+function mesAtualStr(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+
+function renderRecebimentosTab(){
+  const inpMes=document.getElementById('receb-mes');
+  if(!inpMes.value) inpMes.value=mesAtualStr();
+  const mes=inpMes.value;
+
+  const dl=document.getElementById('receb-fornecedores-list');
+  if(!dl.dataset.filled){
+    const nomes=[...new Set(RAW_DATA.map(x=>x.f).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    dl.innerHTML=nomes.map(n=>`<option value="${escHtml(n)}">`).join('');
+    dl.dataset.filled='1';
+  }
+
+  if(!document.getElementById('receb-data').value){
+    document.getElementById('receb-data').value=new Date().toISOString().slice(0,10);
+  }
+
+  const todos=getRecebimentos();
+  const doMes=todos.filter(r=>r.data.slice(0,7)===mes).sort((a,b)=>b.data.localeCompare(a.data));
+  const total=doMes.reduce((s,r)=>s+r.valor,0);
+
+  const metas=getMetas();
+  const meta=metas[mes]||0;
+
+  document.getElementById('receb-total-mes').textContent=fmt(total);
+  document.getElementById('receb-meta-display').textContent=fmt(meta);
+
+  const saldoEl=document.getElementById('receb-saldo');
+  const saldoLbl=document.getElementById('receb-saldo-lbl');
+  const statBox=document.getElementById('receb-stat-saldo');
+  const pctEl=document.getElementById('receb-pct');
+  const bar=document.getElementById('receb-progress-bar');
+
+  if(meta>0){
+    const restante=meta-total;
+    const pct=Math.round((total/meta)*100);
+    saldoEl.textContent=fmt(Math.abs(restante));
+    saldoLbl.textContent=restante>=0?'Restante até a meta':'Meta ultrapassada em';
+    statBox.className='stat '+(restante>=0?'green':'amber');
+    pctEl.textContent=pct+'%';
+    bar.style.width=Math.min(pct,100)+'%';
+    bar.style.background=pct>100?'#ef4444':(pct>85?'#f59e0b':'#3b82f6');
+  }else{
+    saldoEl.textContent='—';
+    saldoLbl.textContent='Defina uma meta';
+    statBox.className='stat';
+    pctEl.textContent='—';
+    bar.style.width='0%';
+  }
+
+  const [ano,mesNum]=mes.split('-');
+  const nomeMes=new Date(+ano,+mesNum-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  document.getElementById('receb-lista-titulo').textContent=`Recebimentos de ${nomeMes} (${doMes.length})`;
+
+  const cont=document.getElementById('lista-recebimentos');
+  if(doMes.length===0){
+    cont.innerHTML='<div class="empty">Nenhum recebimento registrado neste mês.</div>';
+    return;
+  }
+  cont.innerHTML=`<table style="width:100%;font-size:13px;border-collapse:collapse">
+    <thead><tr style="background:#f8fafc">
+      <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase">Data</th>
+      <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase">Fornecedor</th>
+      <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;text-transform:uppercase">Observação</th>
+      <th style="padding:8px 12px;text-align:right;font-size:11px;color:#64748b;text-transform:uppercase">Valor</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${doMes.map(r=>`<tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:8px 12px">${new Date(r.data+'T00:00:00').toLocaleDateString('pt-BR')}</td>
+      <td style="padding:8px 12px;font-weight:600">${escHtml(r.fornecedor)}</td>
+      <td style="padding:8px 12px;color:#64748b">${escHtml(r.obs||'—')}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:700;color:#059669">${fmt(r.valor)}</td>
+      <td style="padding:8px 12px;text-align:right"><button class="btn btn-danger" style="padding:4px 8px;font-size:11px" onclick="excluirRecebimento('${r.id}')">✕</button></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function adicionarRecebimento(){
+  const fornecedor=document.getElementById('receb-fornecedor').value.trim();
+  const data=document.getElementById('receb-data').value;
+  const valor=parseFloat(document.getElementById('receb-valor').value);
+  const obs=document.getElementById('receb-obs').value.trim();
+
+  if(!fornecedor){alert('Informe o fornecedor.');return;}
+  if(!data){alert('Informe a data de recebimento.');return;}
+  if(isNaN(valor) || valor<=0){alert('Informe um valor válido.');return;}
+
+  const recebimentos=getRecebimentos();
+  recebimentos.push({
+    id:'rec_'+Date.now(),
+    fornecedor, data, valor, obs,
+    criadoEm:new Date().toISOString()
+  });
+  setRecebimentos(recebimentos);
+
+  document.getElementById('receb-fornecedor').value='';
+  document.getElementById('receb-valor').value='';
+  document.getElementById('receb-obs').value='';
+  document.getElementById('receb-data').value=new Date().toISOString().slice(0,10);
+
+  const mesDoRegistro=data.slice(0,7);
+  document.getElementById('receb-mes').value=mesDoRegistro;
+  renderRecebimentosTab();
+}
+
+function excluirRecebimento(id){
+  if(!confirm('Excluir este recebimento?')) return;
+  setRecebimentos(getRecebimentos().filter(r=>r.id!==id));
+  renderRecebimentosTab();
+}
+
+function editarMetaMes(){
+  const mes=document.getElementById('receb-mes').value||mesAtualStr();
+  const metas=getMetas();
+  const atual=metas[mes]||'';
+  const [ano,mesNum]=mes.split('-');
+  const nomeMes=new Date(+ano,+mesNum-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const valor=prompt(`Meta de compras para ${nomeMes} (R$):`,atual||'');
+  if(valor===null) return;
+  const num=parseFloat(valor.replace(',','.'));
+  if(isNaN(num) || num<0){alert('Valor inválido.');return;}
+  metas[mes]=num;
+  setMetas(metas);
+  renderRecebimentosTab();
 }
 
 atualizarBadgeSalvos();
