@@ -373,7 +373,7 @@
 </div>
 
 <div class="modal-overlay hidden" id="modal-forn-mercadoria">
-  <div class="modal" style="max-width:520px;height:auto">
+  <div class="modal" style="max-width:520px;height:80vh;max-height:640px">
     <div class="modal-head">
       <div>
         <h2>⚙️ Fornecedores de mercadoria</h2>
@@ -381,9 +381,9 @@
       </div>
       <button class="btn btn-outline" onclick="fecharGerenciarFornecedoresMercadoria()" style="font-size:13px;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)">✕ Fechar</button>
     </div>
-    <div class="modal-body">
-      <input type="text" id="forn-mercadoria-busca" placeholder="Buscar fornecedor..." oninput="renderListaFornecedoresMercadoria()" style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:13px;margin-bottom:12px;outline:none">
-      <div id="lista-forn-mercadoria"></div>
+    <div class="modal-body" style="display:flex;flex-direction:column;overflow:hidden">
+      <input type="text" id="forn-mercadoria-busca" placeholder="Buscar fornecedor..." oninput="renderListaFornecedoresMercadoria()" style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:13px;margin-bottom:12px;outline:none;flex-shrink:0">
+      <div id="lista-forn-mercadoria" style="overflow-y:auto;flex:1"></div>
     </div>
   </div>
 </div>
