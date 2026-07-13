@@ -313,6 +313,7 @@
       <h2 style="font-size:15px;font-weight:700;color:#1a1a2e">📦 Mercadorias Recebidas de Fornecedores</h2>
       <div style="display:flex;align-items:center;gap:8px">
         <input type="month" id="receb-mes" onchange="renderRecebimentosTab()" style="border:1px solid #e2e8f0;border-radius:6px;padding:7px 10px;font-size:13px;outline:none">
+        <button class="btn btn-outline" onclick="abrirGerenciarFornecedoresMercadoria()">⚙️ Fornecedores de mercadoria</button>
       </div>
     </div>
     <div class="stats" style="margin-bottom:0">
@@ -368,6 +369,22 @@
   <div style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;overflow:hidden">
     <div class="table-header"><h2 id="receb-lista-titulo">Recebimentos do mês</h2></div>
     <div id="lista-recebimentos"></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-forn-mercadoria">
+  <div class="modal" style="max-width:520px;height:auto">
+    <div class="modal-head">
+      <div>
+        <h2>⚙️ Fornecedores de mercadoria</h2>
+        <div class="meta">Desmarque quem não é fornecedor de mercadoria (transportadora, serviço, etc.) — só os marcados entram nos totais do mês</div>
+      </div>
+      <button class="btn btn-outline" onclick="fecharGerenciarFornecedoresMercadoria()" style="font-size:13px;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)">✕ Fechar</button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="forn-mercadoria-busca" placeholder="Buscar fornecedor..." oninput="renderListaFornecedoresMercadoria()" style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;font-size:13px;margin-bottom:12px;outline:none">
+      <div id="lista-forn-mercadoria"></div>
+    </div>
   </div>
 </div>
 
@@ -1015,6 +1032,7 @@ function copiarPedido(){
 }
 
 document.getElementById('modal-exp').addEventListener('click',function(e){if(e.target===this)fecharModal();});
+document.getElementById('modal-forn-mercadoria').addEventListener('click',function(e){if(e.target===this)fecharGerenciarFornecedoresMercadoria();});
 
 // ── Pedidos Salvos ──────────────────────────────────────────────────────────
 const LS_KEY='mc_moto_pedidos_salvos';
@@ -1687,6 +1705,49 @@ function getRecebimentos(){
   const manuais=getRecebimentosManuais().map(r=>({...r,origem:'manual'}));
   return [...doSistema,...manuais];
 }
+
+const LS_FORN_NAO_MERCADORIA='mc_moto_forn_nao_mercadoria';
+function getFornecedoresExcluidos(){
+  try{return JSON.parse(localStorage.getItem(LS_FORN_NAO_MERCADORIA)||'[]');}catch(e){return [];}
+}
+function setFornecedoresExcluidos(arr){
+  localStorage.setItem(LS_FORN_NAO_MERCADORIA,JSON.stringify(arr));
+}
+function isFornecedorMercadoria(nome){
+  return !getFornecedoresExcluidos().includes(nome);
+}
+
+function abrirGerenciarFornecedoresMercadoria(){
+  document.getElementById('forn-mercadoria-busca').value='';
+  renderListaFornecedoresMercadoria();
+  document.getElementById('modal-forn-mercadoria').classList.remove('hidden');
+}
+function fecharGerenciarFornecedoresMercadoria(){
+  document.getElementById('modal-forn-mercadoria').classList.add('hidden');
+  renderRecebimentosTab();
+}
+function renderListaFornecedoresMercadoria(){
+  const busca=(document.getElementById('forn-mercadoria-busca').value||'').toLowerCase().trim();
+  const nomes=[...new Set(getRecebimentos().map(r=>r.fornecedor).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const excluidos=getFornecedoresExcluidos();
+  const filtrados=busca?nomes.filter(n=>n.toLowerCase().includes(busca)):nomes;
+  const cont=document.getElementById('lista-forn-mercadoria');
+  if(filtrados.length===0){
+    cont.innerHTML='<div class="empty">Nenhum fornecedor encontrado.</div>';
+    return;
+  }
+  cont.innerHTML=filtrados.map(n=>`<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:13px;cursor:pointer">
+    <input type="checkbox" ${excluidos.includes(n)?'':'checked'} onchange="toggleFornecedorMercadoria('${n.replace(/'/g,"\\'")}')">
+    ${escHtml(n)}
+  </label>`).join('');
+}
+function toggleFornecedorMercadoria(nome){
+  const excluidos=getFornecedoresExcluidos();
+  const idx=excluidos.indexOf(nome);
+  if(idx>-1) excluidos.splice(idx,1);
+  else excluidos.push(nome);
+  setFornecedoresExcluidos(excluidos);
+}
 function getMetas(){
   try{return JSON.parse(localStorage.getItem(LS_METAS)||'{}');}catch(e){return {};}
 }
@@ -1714,7 +1775,7 @@ function renderRecebimentosTab(){
     document.getElementById('receb-data').value=new Date().toISOString().slice(0,10);
   }
 
-  const todos=getRecebimentos();
+  const todos=getRecebimentos().filter(r=>isFornecedorMercadoria(r.fornecedor));
   const doMes=todos.filter(r=>r.data.slice(0,7)===mes).sort((a,b)=>b.data.localeCompare(a.data));
   const total=doMes.reduce((s,r)=>s+r.valor,0);
 
