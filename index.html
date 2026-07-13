@@ -1064,6 +1064,9 @@ function switchAppTab(tab){
   if(tab==='salvos') renderPedidosSalvos();
   if(tab==='cotacao') renderCotacaoTab();
   if(tab==='recebimentos') renderRecebimentosTab();
+
+  const chip=document.getElementById('ped-chip');
+  if(chip) chip.classList.toggle('hidden',tab!=='montar' && tab!=='cotacao');
 }
 
 function salvarPedidoFinalizado(){
