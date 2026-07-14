@@ -319,22 +319,18 @@
     <div class="stats" style="margin-bottom:0">
       <div class="stat blue">
         <div class="val" id="receb-total-mes">R$ 0,00</div>
-        <div class="lbl">Recebido no mês</div>
+        <div class="lbl">Recebidos no mês</div>
       </div>
       <div class="stat purple">
         <div class="val" style="display:flex;align-items:center;gap:6px">
-          <span id="receb-meta-display">R$ 0,00</span>
+          <span id="receb-meta-display">—</span>
           <button onclick="editarMetaMes()" title="Editar meta" style="background:none;border:none;cursor:pointer;font-size:13px;color:#7c3aed">✏️</button>
         </div>
-        <div class="lbl">Meta de compras do mês</div>
+        <div class="lbl">Meta</div>
       </div>
-      <div class="stat" id="receb-stat-saldo">
-        <div class="val" id="receb-saldo">R$ 0,00</div>
-        <div class="lbl" id="receb-saldo-lbl">Restante até a meta</div>
-      </div>
-      <div class="stat amber">
-        <div class="val" id="receb-pct">0%</div>
-        <div class="lbl">Da meta atingida</div>
+      <div class="stat" id="receb-stat-desvio">
+        <div class="val" id="receb-desvio">—</div>
+        <div class="lbl">Desvio</div>
       </div>
     </div>
     <div style="background:#f1f5f9;border-radius:20px;height:10px;margin-top:14px;overflow:hidden">
@@ -1786,28 +1782,22 @@ function renderRecebimentosTab(){
   const meta=metas[mes]||0;
 
   document.getElementById('receb-total-mes').textContent=fmt(total);
-  document.getElementById('receb-meta-display').textContent=fmt(meta);
+  document.getElementById('receb-meta-display').textContent=meta>0?fmt(meta):'—';
 
-  const saldoEl=document.getElementById('receb-saldo');
-  const saldoLbl=document.getElementById('receb-saldo-lbl');
-  const statBox=document.getElementById('receb-stat-saldo');
-  const pctEl=document.getElementById('receb-pct');
+  const desvioEl=document.getElementById('receb-desvio');
+  const statBox=document.getElementById('receb-stat-desvio');
   const bar=document.getElementById('receb-progress-bar');
 
   if(meta>0){
-    const restante=meta-total;
+    const desvio=total-meta;
     const pct=Math.round((total/meta)*100);
-    saldoEl.textContent=fmt(Math.abs(restante));
-    saldoLbl.textContent=restante>=0?'Restante até a meta':'Meta ultrapassada em';
-    statBox.className='stat '+(restante>=0?'green':'amber');
-    pctEl.textContent=pct+'%';
+    desvioEl.textContent=(desvio>0?'+':(desvio<0?'−':''))+fmt(Math.abs(desvio));
+    statBox.className='stat '+(desvio>0?'amber':'green');
     bar.style.width=Math.min(pct,100)+'%';
     bar.style.background=pct>100?'#ef4444':(pct>85?'#f59e0b':'#3b82f6');
   }else{
-    saldoEl.textContent='—';
-    saldoLbl.textContent='Defina uma meta';
+    desvioEl.textContent='—';
     statBox.className='stat';
-    pctEl.textContent='—';
     bar.style.width='0%';
   }
 
