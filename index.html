@@ -148,11 +148,20 @@
 
 <div id="app-tab-montar" class="main">
   <div class="filters">
-    <div class="filter-group" style="min-width:180px">
+    <div class="filter-group" style="min-width:220px;position:relative">
       <label>Fornecedor</label>
-      <select id="sel-fornecedor">
-        <option value="">Todos os fornecedores</option>
-      </select>
+      <button type="button" id="btn-fornecedor-multi" onclick="toggleFornecedorDropdown()" style="text-align:left;display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;font-size:14px;color:#1a1a2e;cursor:pointer">
+        <span id="fornecedor-multi-label">Todos os fornecedores</span>
+        <span style="color:#94a3b8;font-size:11px">▾</span>
+      </button>
+      <div id="fornecedor-dropdown-panel" class="hidden" style="position:absolute;top:100%;left:0;margin-top:4px;width:320px;max-height:320px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50;display:flex;flex-direction:column">
+        <input type="text" id="fornecedor-multi-busca" placeholder="Buscar fornecedor..." oninput="renderFornecedorChecklist()" style="border:none;border-bottom:1px solid #e2e8f0;padding:9px 12px;font-size:13px;outline:none;flex-shrink:0">
+        <div id="fornecedor-multi-lista" style="overflow-y:auto;flex:1"></div>
+        <div style="display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0">
+          <button type="button" class="btn btn-outline" style="flex:1;font-size:11px;padding:6px" onclick="limparSelecaoFornecedor()">Limpar</button>
+          <button type="button" class="btn btn-primary" style="flex:1;font-size:11px;padding:6px" onclick="toggleFornecedorDropdown()">Aplicar</button>
+        </div>
+      </div>
     </div>
     <div class="filter-group" id="fg-grupo" style="min-width:160px">
       <label>Grupo de produto</label>
@@ -495,17 +504,61 @@ let cotacaoSelecionados = {};
 function fmt(n){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0)}
 function fmtN(n){return new Intl.NumberFormat('pt-BR').format(n||0)}
 
-function init(){
-  const sel = document.getElementById('sel-fornecedor');
+let fornecedoresSelecionados=new Set();
+
+function toggleFornecedorDropdown(){
+  const panel=document.getElementById('fornecedor-dropdown-panel');
+  const abrindo=panel.classList.contains('hidden');
+  panel.classList.toggle('hidden');
+  if(abrindo){
+    document.getElementById('fornecedor-multi-busca').value='';
+    renderFornecedorChecklist();
+  }
+}
+function renderFornecedorChecklist(){
+  const busca=(document.getElementById('fornecedor-multi-busca').value||'').toUpperCase().trim();
   const fornecedoresCatalogo=[...new Set(RAW_DATA.map(x=>x.f).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-  fornecedoresCatalogo.forEach(s=>{
-    const o=document.createElement('option');
-    o.value=s;o.textContent=s;
-    sel.appendChild(o);
+  const filtrados=busca?fornecedoresCatalogo.filter(n=>n.toUpperCase().includes(busca)):fornecedoresCatalogo;
+  const cont=document.getElementById('fornecedor-multi-lista');
+  if(filtrados.length===0){
+    cont.innerHTML='<div style="padding:14px;text-align:center;color:#94a3b8;font-size:13px">Nenhum fornecedor encontrado</div>';
+    return;
+  }
+  cont.innerHTML=filtrados.map(n=>`<label style="display:flex;align-items:center;gap:8px;padding:7px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid #f8fafc">
+    <input type="checkbox" ${fornecedoresSelecionados.has(n)?'checked':''} onchange="toggleFornecedorSelecionado('${n.replace(/'/g,"\\'")}')">
+    ${escHtml(n)}
+  </label>`).join('');
+}
+function toggleFornecedorSelecionado(nome){
+  if(fornecedoresSelecionados.has(nome)) fornecedoresSelecionados.delete(nome);
+  else fornecedoresSelecionados.add(nome);
+  atualizarLabelFornecedor();
+  page=0;render();
+}
+function limparSelecaoFornecedor(){
+  fornecedoresSelecionados.clear();
+  atualizarLabelFornecedor();
+  renderFornecedorChecklist();
+  page=0;render();
+}
+function atualizarLabelFornecedor(){
+  const label=document.getElementById('fornecedor-multi-label');
+  const n=fornecedoresSelecionados.size;
+  if(n===0) label.textContent='Todos os fornecedores';
+  else if(n===1) label.textContent=[...fornecedoresSelecionados][0];
+  else label.textContent=`${n} fornecedores selecionados`;
+}
+
+function init(){
+  document.addEventListener('click',(e)=>{
+    const panel=document.getElementById('fornecedor-dropdown-panel');
+    const btn=document.getElementById('btn-fornecedor-multi');
+    if(!panel.classList.contains('hidden') && !panel.contains(e.target) && e.target!==btn && !btn.contains(e.target)){
+      panel.classList.add('hidden');
+    }
   });
 
   document.getElementById('inp-busca').addEventListener('input',()=>{page=0;render()});
-  document.getElementById('sel-fornecedor').addEventListener('change',()=>{page=0;render()});
   document.getElementById('sel-grupo').addEventListener('change',()=>{
     page=0;
     const v=document.getElementById('sel-grupo').value;
@@ -519,7 +572,7 @@ function init(){
 
 function getFilters(){
   return {
-    fornecedor: document.getElementById('sel-fornecedor').value,
+    fornecedor: [...fornecedoresSelecionados],
     grupo: document.getElementById('sel-grupo').value,
     busca: document.getElementById('inp-busca').value.trim().toUpperCase(),
     modo: window._buscaModo || 'E',
@@ -529,7 +582,8 @@ function getFilters(){
 }
 
 function limparFiltros(){
-  document.getElementById('sel-fornecedor').value='';
+  fornecedoresSelecionados.clear();
+  atualizarLabelFornecedor();
   document.getElementById('sel-grupo').value='';
   document.getElementById('fg-grupo').classList.remove('grupo-ativo');
   document.getElementById('inp-busca').value='';
@@ -563,7 +617,7 @@ function filterData(){
   if(f.filtro==='sugestao') d=d.filter(x=>x.s>0);
   else if(f.filtro==='sem_estoque') d=d.filter(x=>x.e<=0);
 
-  if(f.fornecedor) d=d.filter(x=>x.f===f.fornecedor);
+  if(f.fornecedor.length) d=d.filter(x=>f.fornecedor.includes(x.f));
   if(f.grupo) d=d.filter(x=>x.g===f.grupo);
 
   if(f.busca){
