@@ -133,14 +133,36 @@
   </div>
 </div>
 
-<div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;display:flex;gap:4px">
+<div style="background:#1a1a2e;padding:0 24px;display:flex;gap:4px">
+  <button id="grupobtn-compras" class="grupo-tab active" onclick="switchGrupo('compras')">🛍️ COMPRAS</button>
+  <button id="grupobtn-vendas" class="grupo-tab" onclick="switchGrupo('vendas')">📈 VENDAS</button>
+  <button id="grupobtn-financeiro" class="grupo-tab" onclick="switchGrupo('financeiro')">💰 FINANCEIRO</button>
+  <button id="grupobtn-rhsseven" class="grupo-tab" onclick="switchGrupo('rhsseven')">🏢 RHS/SEVEN</button>
+</div>
+
+<div id="subtabs-compras" style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;display:flex;gap:4px">
   <button id="tabbtn-montar" class="app-tab active" onclick="switchAppTab('montar')">🛒 Montar Pedido</button>
   <button id="tabbtn-cotacao" class="app-tab" onclick="switchAppTab('cotacao')">📊 Cotação <span id="cotacao-sel-badge" class="tab-count hidden">0</span></button>
   <button id="tabbtn-salvos" class="app-tab" onclick="switchAppTab('salvos')">📁 Pedidos Salvos <span id="salvos-count-badge" class="tab-count hidden">0</span></button>
   <button id="tabbtn-recebimentos" class="app-tab" onclick="switchAppTab('recebimentos')">📦 Recebimentos</button>
-  <button id="tabbtn-mapavendas" class="app-tab" onclick="switchAppTab('mapavendas')">🗺️ Mapa de Vendas</button>
+</div>
+<div id="subtabs-vendas" style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;display:flex;gap:4px" class="hidden">
+  <button class="app-tab sub-mapavendas" data-mapatab="painel" onclick="abrirSubAbaMapa('painel',this)">📅 Painel Mensal</button>
+  <button class="app-tab sub-mapavendas" data-mapatab="diarias" onclick="abrirSubAbaMapa('diarias',this)">📆 Vendas Diárias</button>
+  <button class="app-tab sub-mapavendas" data-mapatab="grupos" onclick="abrirSubAbaMapa('grupos',this)">🗂️ Grupo de Produto</button>
+  <button class="app-tab sub-mapavendas" data-mapatab="consistencia" onclick="abrirSubAbaMapa('consistencia',this)">✅ Consistência por Grupo</button>
+  <button class="app-tab sub-mapavendas" data-mapatab="fornecedor" onclick="abrirSubAbaMapa('fornecedor',this)">🏭 Venda por Fornecedor</button>
+</div>
+<div id="subtabs-financeiro" style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;display:flex;gap:4px" class="hidden">
+  <button class="app-tab sub-mapavendas" data-mapatab="contaspagar" onclick="abrirSubAbaMapa('contaspagar',this)">💳 Contas a Pagar</button>
+</div>
+<div id="subtabs-rhsseven" style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;display:flex;gap:4px" class="hidden">
+  <button class="app-tab sub-mapavendas" data-mapatab="unidades" onclick="abrirSubAbaMapa('unidades',this)">🏢 Unidades de Negócio</button>
 </div>
 <style>
+  .grupo-tab{padding:11px 20px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:700;letter-spacing:.3px;color:rgba(255,255,255,.55);border-bottom:3px solid transparent;transition:all .15s}
+  .grupo-tab:hover{color:#fff}
+  .grupo-tab.active{color:#fff;border-bottom-color:#3b82f6;background:rgba(255,255,255,.06)}
   .app-tab{padding:12px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:#64748b;border-bottom:3px solid transparent;transition:all .15s}
   .app-tab:hover{color:#1a1a2e}
   .app-tab.active{color:#3b82f6;border-bottom-color:#3b82f6}
@@ -403,7 +425,7 @@
 
 <div id="app-tab-mapavendas" class="main hidden" style="max-width:100%">
   <div style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;overflow:hidden;height:calc(100vh - 180px)">
-    <iframe src="mapa-vendas.html" style="width:100%;height:100%;border:none;display:block"></iframe>
+    <iframe id="iframe-mapavendas" src="mapa-vendas.html" style="width:100%;height:100%;border:none;display:block"></iframe>
   </div>
 </div>
 
@@ -1138,12 +1160,11 @@ function switchAppTab(tab){
   document.getElementById('app-tab-salvos').classList.toggle('hidden',tab!=='salvos');
   document.getElementById('app-tab-cotacao').classList.toggle('hidden',tab!=='cotacao');
   document.getElementById('app-tab-recebimentos').classList.toggle('hidden',tab!=='recebimentos');
-  document.getElementById('app-tab-mapavendas').classList.toggle('hidden',tab!=='mapavendas');
+  document.getElementById('app-tab-mapavendas').classList.add('hidden');
   document.getElementById('tabbtn-montar').classList.toggle('active',tab==='montar');
   document.getElementById('tabbtn-salvos').classList.toggle('active',tab==='salvos');
   document.getElementById('tabbtn-cotacao').classList.toggle('active',tab==='cotacao');
   document.getElementById('tabbtn-recebimentos').classList.toggle('active',tab==='recebimentos');
-  document.getElementById('tabbtn-mapavendas').classList.toggle('active',tab==='mapavendas');
   if(tab==='salvos') renderPedidosSalvos();
   if(tab==='cotacao') renderCotacaoTab();
   if(tab==='recebimentos') renderRecebimentosTab();
@@ -1151,6 +1172,60 @@ function switchAppTab(tab){
   const chip=document.getElementById('ped-chip');
   if(chip) chip.classList.toggle('hidden',tab!=='montar' && tab!=='cotacao');
 }
+
+const GRUPOS_MAIN=['app-tab-montar','app-tab-salvos','app-tab-cotacao','app-tab-recebimentos','app-tab-mapavendas'];
+const SUBTABS_ROWS=['subtabs-compras','subtabs-vendas','subtabs-financeiro','subtabs-rhsseven'];
+let _mapaTabPendente=null;
+
+function switchGrupo(grupo){
+  document.getElementById('grupobtn-compras').classList.toggle('active',grupo==='compras');
+  document.getElementById('grupobtn-vendas').classList.toggle('active',grupo==='vendas');
+  document.getElementById('grupobtn-financeiro').classList.toggle('active',grupo==='financeiro');
+  document.getElementById('grupobtn-rhsseven').classList.toggle('active',grupo==='rhsseven');
+
+  document.getElementById('subtabs-compras').classList.toggle('hidden',grupo!=='compras');
+  document.getElementById('subtabs-vendas').classList.toggle('hidden',grupo!=='vendas');
+  document.getElementById('subtabs-financeiro').classList.toggle('hidden',grupo!=='financeiro');
+  document.getElementById('subtabs-rhsseven').classList.toggle('hidden',grupo!=='rhsseven');
+
+  if(grupo==='compras'){
+    switchAppTab('montar');
+  }else{
+    GRUPOS_MAIN.forEach(id=>document.getElementById(id).classList.add('hidden'));
+    document.getElementById('app-tab-mapavendas').classList.remove('hidden');
+    const chip=document.getElementById('ped-chip');
+    if(chip) chip.classList.add('hidden');
+    const primeiraSub=document.querySelector('#subtabs-'+grupo+' .sub-mapavendas');
+    if(primeiraSub) abrirSubAbaMapa(primeiraSub.dataset.mapatab,primeiraSub);
+  }
+}
+
+function abrirSubAbaMapa(id,btnEl){
+  const linha=btnEl.closest('div');
+  linha.querySelectorAll('.sub-mapavendas').forEach(b=>b.classList.toggle('active',b===btnEl));
+  const iframe=document.getElementById('iframe-mapavendas');
+  const tentar=()=>{
+    try{
+      if(iframe.contentWindow && typeof iframe.contentWindow.trocarAba==='function'){
+        iframe.contentWindow.trocarAba(id);
+      }else{
+        _mapaTabPendente=id;
+      }
+    }catch(e){ _mapaTabPendente=id; }
+  };
+  tentar();
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const iframe=document.getElementById('iframe-mapavendas');
+  if(iframe){
+    iframe.addEventListener('load',()=>{
+      if(_mapaTabPendente && iframe.contentWindow && typeof iframe.contentWindow.trocarAba==='function'){
+        iframe.contentWindow.trocarAba(_mapaTabPendente);
+        _mapaTabPendente=null;
+      }
+    });
+  }
+});
 
 function salvarPedidoFinalizado(){
   const items=Object.values(pedido);
