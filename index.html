@@ -157,7 +157,8 @@
   <button class="app-tab sub-mapavendas" data-mapatab="contaspagar" onclick="abrirSubAbaMapa('contaspagar',this)">💳 Contas a Pagar</button>
 </div>
 <div id="subtabs-rhsseven" style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;display:flex;gap:4px" class="hidden">
-  <button class="app-tab sub-mapavendas" data-mapatab="unidades" onclick="abrirSubAbaMapa('unidades',this)">🏢 Unidades de Negócio</button>
+  <button class="app-tab sub-rhsseven active" data-target="unidades" onclick="abrirSubAbaRHSSeven('unidades',this)">🏢 Unidades de Negócio</button>
+  <button class="app-tab sub-rhsseven" data-target="crm" onclick="abrirSubAbaRHSSeven('crm',this)">👥 CRM</button>
 </div>
 <style>
   .grupo-tab{padding:11px 20px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:700;letter-spacing:.3px;color:rgba(255,255,255,.55);border-bottom:3px solid transparent;transition:all .15s}
@@ -426,6 +427,12 @@
 <div id="app-tab-mapavendas" class="main hidden" style="max-width:100%">
   <div style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;overflow:hidden;height:calc(100vh - 180px)">
     <iframe id="iframe-mapavendas" src="mapa-vendas.html" style="width:100%;height:100%;border:none;display:block"></iframe>
+  </div>
+</div>
+
+<div id="app-tab-crmseven" class="main hidden" style="max-width:100%">
+  <div style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;overflow:hidden;height:calc(100vh - 180px)">
+    <iframe id="iframe-crmseven" src="crm-seven.html" style="width:100%;height:100%;border:none;display:block"></iframe>
   </div>
 </div>
 
@@ -1173,7 +1180,7 @@ function switchAppTab(tab){
   if(chip) chip.classList.toggle('hidden',tab!=='montar' && tab!=='cotacao');
 }
 
-const GRUPOS_MAIN=['app-tab-montar','app-tab-salvos','app-tab-cotacao','app-tab-recebimentos','app-tab-mapavendas'];
+const GRUPOS_MAIN=['app-tab-montar','app-tab-salvos','app-tab-cotacao','app-tab-recebimentos','app-tab-mapavendas','app-tab-crmseven'];
 const SUBTABS_ROWS=['subtabs-compras','subtabs-vendas','subtabs-financeiro','subtabs-rhsseven'];
 let _mapaTabPendente=null;
 
@@ -1190,6 +1197,12 @@ function switchGrupo(grupo){
 
   if(grupo==='compras'){
     switchAppTab('montar');
+  }else if(grupo==='rhsseven'){
+    GRUPOS_MAIN.forEach(id=>document.getElementById(id).classList.add('hidden'));
+    const chip=document.getElementById('ped-chip');
+    if(chip) chip.classList.add('hidden');
+    const primeiraSub=document.querySelector('#subtabs-rhsseven .sub-rhsseven');
+    if(primeiraSub) abrirSubAbaRHSSeven(primeiraSub.dataset.target,primeiraSub);
   }else{
     GRUPOS_MAIN.forEach(id=>document.getElementById(id).classList.add('hidden'));
     document.getElementById('app-tab-mapavendas').classList.remove('hidden');
@@ -1197,6 +1210,24 @@ function switchGrupo(grupo){
     if(chip) chip.classList.add('hidden');
     const primeiraSub=document.querySelector('#subtabs-'+grupo+' .sub-mapavendas');
     if(primeiraSub) abrirSubAbaMapa(primeiraSub.dataset.mapatab,primeiraSub);
+  }
+}
+
+function abrirSubAbaRHSSeven(target,btnEl){
+  document.querySelectorAll('#subtabs-rhsseven .sub-rhsseven').forEach(b=>b.classList.toggle('active',b===btnEl));
+  GRUPOS_MAIN.forEach(id=>document.getElementById(id).classList.add('hidden'));
+  if(target==='crm'){
+    document.getElementById('app-tab-crmseven').classList.remove('hidden');
+  }else{
+    document.getElementById('app-tab-mapavendas').classList.remove('hidden');
+    const iframe=document.getElementById('iframe-mapavendas');
+    try{
+      if(iframe.contentWindow && typeof iframe.contentWindow.trocarAba==='function'){
+        iframe.contentWindow.trocarAba('unidades');
+      }else{
+        _mapaTabPendente='unidades';
+      }
+    }catch(e){ _mapaTabPendente='unidades'; }
   }
 }
 
