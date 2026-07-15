@@ -138,6 +138,7 @@
   <button id="tabbtn-cotacao" class="app-tab" onclick="switchAppTab('cotacao')">📊 Cotação <span id="cotacao-sel-badge" class="tab-count hidden">0</span></button>
   <button id="tabbtn-salvos" class="app-tab" onclick="switchAppTab('salvos')">📁 Pedidos Salvos <span id="salvos-count-badge" class="tab-count hidden">0</span></button>
   <button id="tabbtn-recebimentos" class="app-tab" onclick="switchAppTab('recebimentos')">📦 Recebimentos</button>
+  <button id="tabbtn-mapavendas" class="app-tab" onclick="switchAppTab('mapavendas')">🗺️ Mapa de Vendas</button>
 </div>
 <style>
   .app-tab{padding:12px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:#64748b;border-bottom:3px solid transparent;transition:all .15s}
@@ -397,6 +398,12 @@
         <tbody id="quadro-anual-corpo"></tbody>
       </table>
     </div>
+  </div>
+</div>
+
+<div id="app-tab-mapavendas" class="main hidden" style="max-width:100%">
+  <div style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;overflow:hidden;height:calc(100vh - 180px)">
+    <iframe src="mapa-vendas.html" style="width:100%;height:100%;border:none;display:block"></iframe>
   </div>
 </div>
 
@@ -1131,10 +1138,12 @@ function switchAppTab(tab){
   document.getElementById('app-tab-salvos').classList.toggle('hidden',tab!=='salvos');
   document.getElementById('app-tab-cotacao').classList.toggle('hidden',tab!=='cotacao');
   document.getElementById('app-tab-recebimentos').classList.toggle('hidden',tab!=='recebimentos');
+  document.getElementById('app-tab-mapavendas').classList.toggle('hidden',tab!=='mapavendas');
   document.getElementById('tabbtn-montar').classList.toggle('active',tab==='montar');
   document.getElementById('tabbtn-salvos').classList.toggle('active',tab==='salvos');
   document.getElementById('tabbtn-cotacao').classList.toggle('active',tab==='cotacao');
   document.getElementById('tabbtn-recebimentos').classList.toggle('active',tab==='recebimentos');
+  document.getElementById('tabbtn-mapavendas').classList.toggle('active',tab==='mapavendas');
   if(tab==='salvos') renderPedidosSalvos();
   if(tab==='cotacao') renderCotacaoTab();
   if(tab==='recebimentos') renderRecebimentosTab();
