@@ -174,6 +174,7 @@
 <div id="subtabs-rhsseven" style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;display:flex;gap:4px" class="hidden">
   <button class="app-tab sub-rhsseven active" data-target="unidades" onclick="abrirSubAbaRHSSeven('unidades',this)">🏢 Unidades de Negócio</button>
   <button class="app-tab sub-rhsseven" data-target="crm" onclick="abrirSubAbaRHSSeven('crm',this)">👥 CRM</button>
+  <button class="app-tab sub-rhsseven" data-target="financeiroseven" onclick="abrirSubAbaRHSSeven('financeiroseven',this)">💰 Financeiro</button>
 </div>
 <style>
   .grupo-tab{padding:11px 20px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:700;letter-spacing:.3px;color:rgba(255,255,255,.55);border-bottom:3px solid transparent;transition:all .15s}
@@ -451,6 +452,23 @@
 <div id="app-tab-crmseven" class="main hidden" style="max-width:100%">
   <div style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;overflow:hidden;height:calc(100vh - 180px)">
     <iframe id="iframe-crmseven" src="crm-seven.html" style="width:100%;height:100%;border:none;display:block"></iframe>
+  </div>
+</div>
+
+<div id="app-tab-financeiroseven" class="main hidden" style="max-width:100%">
+  <div style="background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;padding:8px;display:flex;gap:8px;margin-bottom:12px">
+    <button id="catbtn-fs-contaspagar" class="categoria-tab active" onclick="switchCategoriaFinanceiroSeven('contaspagar')">💳 Contas a Pagar</button>
+    <button id="catbtn-fs-contasreceber" class="categoria-tab" onclick="switchCategoriaFinanceiroSeven('contasreceber')">💵 Contas a Receber</button>
+    <button id="catbtn-fs-riscocliente" class="categoria-tab" onclick="switchCategoriaFinanceiroSeven('riscocliente')">⚠️ Risco/Cliente</button>
+  </div>
+  <div id="fs-contaspagar" class="fs-painel" style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:40px;text-align:center;color:#94a3b8">
+    Em breve.
+  </div>
+  <div id="fs-contasreceber" class="fs-painel hidden" style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:40px;text-align:center;color:#94a3b8">
+    Em breve.
+  </div>
+  <div id="fs-riscocliente" class="fs-painel hidden" style="background:#fff;border-radius:10px;border:1px solid #e2e8f0;overflow:hidden;height:calc(100vh - 240px)">
+    <iframe id="iframe-riscocliente" src="risco-cliente.html" style="width:100%;height:100%;border:none;display:block"></iframe>
   </div>
 </div>
 
@@ -1194,6 +1212,7 @@ function switchAppTab(tab){
   document.getElementById('app-tab-recebimentos').classList.toggle('hidden',tab!=='recebimentos');
   document.getElementById('app-tab-mapavendas').classList.add('hidden');
   document.getElementById('app-tab-crmseven').classList.add('hidden');
+  document.getElementById('app-tab-financeiroseven').classList.add('hidden');
   document.getElementById('tabbtn-montar').classList.toggle('active',tab==='montar');
   document.getElementById('tabbtn-salvos').classList.toggle('active',tab==='salvos');
   document.getElementById('tabbtn-cotacao').classList.toggle('active',tab==='cotacao');
@@ -1206,7 +1225,7 @@ function switchAppTab(tab){
   if(chip) chip.classList.toggle('hidden',tab!=='montar' && tab!=='cotacao');
 }
 
-const GRUPOS_MAIN=['app-tab-montar','app-tab-salvos','app-tab-cotacao','app-tab-recebimentos','app-tab-mapavendas','app-tab-crmseven'];
+const GRUPOS_MAIN=['app-tab-montar','app-tab-salvos','app-tab-cotacao','app-tab-recebimentos','app-tab-mapavendas','app-tab-crmseven','app-tab-financeiroseven'];
 const SUBTABS_ROWS=['subtabs-compras','subtabs-vendas','subtabs-financeiro','subtabs-rhsseven'];
 const CATEGORIAS_MCMOTO=['compras','vendas','financeiro'];
 let _mapaTabPendente=null;
@@ -1307,6 +1326,8 @@ function abrirSubAbaRHSSeven(target,btnEl){
   GRUPOS_MAIN.forEach(id=>document.getElementById(id).classList.add('hidden'));
   if(target==='crm'){
     document.getElementById('app-tab-crmseven').classList.remove('hidden');
+  }else if(target==='financeiroseven'){
+    document.getElementById('app-tab-financeiroseven').classList.remove('hidden');
   }else{
     document.getElementById('app-tab-mapavendas').classList.remove('hidden');
     const iframe=document.getElementById('iframe-mapavendas');
@@ -1318,6 +1339,13 @@ function abrirSubAbaRHSSeven(target,btnEl){
       }
     }catch(e){ _mapaTabPendente='unidades'; }
   }
+}
+
+function switchCategoriaFinanceiroSeven(categoria){
+  ['contaspagar','contasreceber','riscocliente'].forEach(c=>{
+    document.getElementById('catbtn-fs-'+c).classList.toggle('active',c===categoria);
+    document.getElementById('fs-'+c).classList.toggle('hidden',c!==categoria);
+  });
 }
 
 function abrirSubAbaMapa(id,btnEl){
