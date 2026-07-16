@@ -98,7 +98,7 @@
   <button id="btn-atualizar" onclick="atualizarDados()" title="Reconsulta os 2 bancos (mc_moto + Seven/F7) e recarrega"
     style="background:#0ca30c; color:#fff; border:none; padding:9px 16px; border-radius:6px; font-size:13px; font-weight:bold; cursor:pointer; white-space:nowrap;">🔄 Atualizar dados</button>
 </h1>
-<div class="sub">Dados atualizados automaticamente em: <b>16/07/2026 17:47:52</b> — atualização diária agendada às 19:00, ou clique em "Atualizar dados". Faturamento considerado até: <b>15/07/2026</b> (dia anterior, dia corrente sempre excluído por poder estar incompleto).</div>
+<div class="sub">Dados atualizados automaticamente em: <b>16/07/2026 17:57:57</b> — atualização diária agendada às 19:00, ou clique em "Atualizar dados". Faturamento considerado até: <b>15/07/2026</b> (dia anterior, dia corrente sempre excluído por poder estar incompleto).</div>
 <div id="atualizar-msg" style="display:none; margin-bottom:12px; padding:8px 12px; border-radius:6px; font-size:13px;"></div>
 
 <div class="tabs">
@@ -312,7 +312,11 @@
   </div>
   <table id="consistencia-tbl">
     <thead><tr>
-      <th>Grupo</th><th>Vendas no mês</th><th>MC no mês</th><th>MC %</th><th>Projeção do mês</th><th>Média histórica/mês</th>
+      <th>Grupo</th>
+      <th onclick="ordenarConsistencia('vendaAtual')" style="cursor:pointer">Vendas no mês <span id="sort-vendaAtual"></span></th>
+      <th onclick="ordenarConsistencia('mcAtual')" style="cursor:pointer">MC no mês <span id="sort-mcAtual"></span></th>
+      <th onclick="ordenarConsistencia('mcPct')" style="cursor:pointer">MC % <span id="sort-mcPct"></span></th>
+      <th>Projeção do mês</th><th>Média histórica/mês</th>
       <th>Proj. vs média</th><th>Particip. atual</th><th>Particip. histórica</th><th>Situação</th>
     </tr></thead>
     <tbody id="consistencia-body"></tbody>
@@ -1334,6 +1338,13 @@ function setPeriodoConsistencia(p){
   renderConsistencia();
 }
 
+let sortConsistencia = {campo:'vendaAtual', dir:-1};
+function ordenarConsistencia(campo){
+  if (sortConsistencia.campo === campo) sortConsistencia.dir *= -1;
+  else sortConsistencia = {campo, dir:-1};
+  renderConsistencia();
+}
+
 // recalcula media mensal e participacao historica por grupo usando os ultimos N meses de P.histGrupo
 function mediaHistoricaDinamica(n){
   const todosMeses = (P.histGrupo && P.histGrupo.meses) ? P.histGrupo.meses : [];
@@ -1383,8 +1394,17 @@ function renderConsistencia(){
     const shareHist = mg[nome] ? mg[nome].shareHist : 0;
     linhas.push({nome, vendaAtual, mcAtual, mcPct, projecao, media, variacao, shareAtual, shareHist});
   });
-  // ordena por venda atual desc
-  linhas.sort((a,b) => b.vendaAtual - a.vendaAtual);
+  // ordena pelo campo/direcao escolhidos (clique no cabeçalho da tabela)
+  linhas.sort((a,b) => (a[sortConsistencia.campo] - b[sortConsistencia.campo]) * sortConsistencia.dir);
+  ['vendaAtual','mcAtual','mcPct'].forEach(c => {
+    const el = document.getElementById('sort-'+c);
+    if (el) el.textContent = c===sortConsistencia.campo ? (sortConsistencia.dir===1 ? '▲' : '▼') : '';
+  });
+
+  // margem media geral (ponderada) para sinalizar grupos com MC% muito abaixo do normal
+  const totalVendaGeral = linhas.reduce((s,l)=>s+l.vendaAtual, 0);
+  const totalMcGeral = linhas.reduce((s,l)=>s+l.mcAtual, 0);
+  const mcPctMedioGeral = totalVendaGeral > 0 ? totalMcGeral / totalVendaGeral : 0;
 
   // indice de alinhamento da composicao (overlap das participacoes)
   let overlap = 0;
@@ -1397,10 +1417,12 @@ function renderConsistencia(){
 
   const nAcima = linhas.filter(l => l.variacao != null && l.variacao > 0.10).length;
   const nAbaixo = linhas.filter(l => l.variacao != null && l.variacao < -0.10).length;
+  const nMargemBaixa = linhas.filter(l => l.vendaAtual > 0 && l.mcPct < mcPctMedioGeral - 0.10).length;
   document.getElementById('consistencia-resumo').innerHTML =
     '<div class="chart-title" style="color:'+cor+'">Composição '+alinhamento+'% alinhada ao histórico</div>' +
     '<div class="chart-sub">'+esc(veredito)+' '+
-    '<b>'+nAcima+'</b> grupo(s) acima e <b>'+nAbaixo+'</b> abaixo do esperado na projeção do mês. '+
+    '<b>'+nAcima+'</b> grupo(s) acima e <b>'+nAbaixo+'</b> abaixo do esperado na projeção do mês. ' +
+    (nMargemBaixa > 0 ? '<b style="color:#d03b3b">'+nMargemBaixa+'</b> grupo(s) com margem (MC%) bem abaixo da média geral ('+PCT(mcPctMedioGeral)+'). ' : '') +
     'Base: '+baseHist.mesesCompletos+' meses concluídos.</div>';
 
   // grafico divergente (variacao ordenada)
@@ -1418,12 +1440,15 @@ function renderConsistencia(){
     else { icon='✅'; txt='Dentro'; }
     const varTxt = l.variacao==null ? '-' : ((l.variacao>=0?'+':'')+(l.variacao*100).toFixed(0)+'%');
     const varCls = l.variacao==null ? '' : (l.variacao>0.10?'pct-ok':(l.variacao<-0.10?'pct-bad':''));
+    const margemBaixa = l.vendaAtual > 0 && l.mcPct < mcPctMedioGeral - 0.10;
+    const mcCls = margemBaixa ? 'pct-bad' : (l.mcPct > mcPctMedioGeral + 0.10 ? 'pct-ok' : '');
+    const mcTitle = margemBaixa ? ' title="Margem bem abaixo da média geral ('+PCT(mcPctMedioGeral)+')"' : '';
     const tr = document.createElement('tr');
     tr.innerHTML =
       '<td>'+esc(l.nome)+'</td>'+
       '<td>'+CUR(l.vendaAtual)+'</td>'+
       '<td>'+CUR(l.mcAtual)+'</td>'+
-      '<td>'+PCT(l.mcPct)+'</td>'+
+      '<td class="'+mcCls+'"'+mcTitle+'>'+(margemBaixa?'⚠️ ':'')+PCT(l.mcPct)+'</td>'+
       '<td>'+CUR(l.projecao)+'</td>'+
       '<td>'+CUR(l.media)+'</td>'+
       '<td class="'+varCls+'">'+varTxt+'</td>'+
