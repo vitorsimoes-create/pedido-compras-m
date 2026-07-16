@@ -122,6 +122,17 @@
 </head>
 <body>
 
+<div id="lock-overlay" style="position:fixed;inset:0;background:#1a1a2e;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px">
+  <div style="font-size:40px">🔒</div>
+  <div style="color:#fff;font-size:18px;font-weight:700">Painel de Pedidos de Compra</div>
+  <div style="color:rgba(255,255,255,.6);font-size:13px;margin-bottom:8px">Digite a senha para acessar</div>
+  <form onsubmit="return tentarDesbloquear(event)" style="display:flex;gap:8px">
+    <input type="password" id="lock-senha" autofocus style="padding:10px 14px;border-radius:6px;border:none;font-size:14px;width:220px" placeholder="Senha">
+    <button type="submit" class="btn btn-primary" style="padding:10px 18px">Entrar</button>
+  </form>
+  <div id="lock-erro" style="color:#f87171;font-size:12px;display:none">Senha incorreta.</div>
+</div>
+
 <div class="header">
   <div>
     <h1>📦 Painel de Pedidos de Compra</h1>
@@ -593,6 +604,10 @@ function atualizarLabelFornecedor(){
 }
 
 function init(){
+  if(sessionStorage.getItem('aba_desbloqueada_mcmoto')==='1'){
+    document.getElementById('lock-overlay').classList.add('hidden');
+  }
+
   document.addEventListener('click',(e)=>{
     const panel=document.getElementById('fornecedor-dropdown-panel');
     const btn=document.getElementById('btn-fornecedor-multi');
@@ -1193,8 +1208,43 @@ const SUBTABS_ROWS=['subtabs-compras','subtabs-vendas','subtabs-financeiro','sub
 const CATEGORIAS_MCMOTO=['compras','vendas','financeiro'];
 let _mapaTabPendente=null;
 let _ultimaCategoriaMcMoto='compras';
+let _grupoAtual='mcmoto';
+
+const TAB_PASSWORDS={mcmoto:'DIOGO',rhsseven:'VITOR'};
+function abaDesbloqueada(grupo){
+  return sessionStorage.getItem('aba_desbloqueada_'+grupo)==='1';
+}
+function tentarDesbloquear(e){
+  e.preventDefault();
+  const senha=document.getElementById('lock-senha').value;
+  if(senha===TAB_PASSWORDS.mcmoto){
+    sessionStorage.setItem('aba_desbloqueada_mcmoto','1');
+    document.getElementById('lock-overlay').classList.add('hidden');
+  }else{
+    document.getElementById('lock-erro').style.display='block';
+    document.getElementById('lock-senha').value='';
+  }
+  return false;
+}
+function verificarSenhaAba(grupo){
+  if(abaDesbloqueada(grupo)) return true;
+  const senha=prompt('Digite a senha para acessar esta aba:');
+  if(senha===null) return false;
+  if(senha===TAB_PASSWORDS[grupo]){
+    sessionStorage.setItem('aba_desbloqueada_'+grupo,'1');
+    return true;
+  }
+  alert('Senha incorreta.');
+  return false;
+}
 
 function switchGrupo(grupo){
+  if(!verificarSenhaAba(grupo)){
+    document.getElementById('grupobtn-mcmoto').classList.toggle('active',_grupoAtual==='mcmoto');
+    document.getElementById('grupobtn-rhsseven').classList.toggle('active',_grupoAtual==='rhsseven');
+    return;
+  }
+  _grupoAtual=grupo;
   document.getElementById('grupobtn-mcmoto').classList.toggle('active',grupo==='mcmoto');
   document.getElementById('grupobtn-rhsseven').classList.toggle('active',grupo==='rhsseven');
 
