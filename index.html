@@ -134,10 +134,14 @@
 </div>
 
 <div style="background:#1a1a2e;padding:0 24px;display:flex;gap:4px">
-  <button id="grupobtn-compras" class="grupo-tab active" onclick="switchGrupo('compras')">🛍️ COMPRAS</button>
-  <button id="grupobtn-vendas" class="grupo-tab" onclick="switchGrupo('vendas')">📈 VENDAS</button>
-  <button id="grupobtn-financeiro" class="grupo-tab" onclick="switchGrupo('financeiro')">💰 FINANCEIRO</button>
+  <button id="grupobtn-mcmoto" class="grupo-tab active" onclick="switchGrupo('mcmoto')">🏍️ MC MOTO</button>
   <button id="grupobtn-rhsseven" class="grupo-tab" onclick="switchGrupo('rhsseven')">🏢 RHS/SEVEN</button>
+</div>
+
+<div id="categorias-mcmoto" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:8px 24px;display:flex;gap:8px">
+  <button id="catbtn-compras" class="categoria-tab active" onclick="switchCategoriaMcMoto('compras')">🛍️ COMPRAS</button>
+  <button id="catbtn-vendas" class="categoria-tab" onclick="switchCategoriaMcMoto('vendas')">📈 VENDAS</button>
+  <button id="catbtn-financeiro" class="categoria-tab" onclick="switchCategoriaMcMoto('financeiro')">💰 FINANCEIRO</button>
 </div>
 
 <div id="subtabs-compras" style="background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;display:flex;gap:4px">
@@ -164,6 +168,9 @@
   .grupo-tab{padding:11px 20px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:700;letter-spacing:.3px;color:rgba(255,255,255,.55);border-bottom:3px solid transparent;transition:all .15s}
   .grupo-tab:hover{color:#fff}
   .grupo-tab.active{color:#fff;border-bottom-color:#3b82f6;background:rgba(255,255,255,.06)}
+  .categoria-tab{padding:7px 16px;border:1px solid #e2e8f0;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;font-weight:700;color:#64748b;transition:all .15s}
+  .categoria-tab:hover{border-color:#94a3b8;color:#1a1a2e}
+  .categoria-tab.active{background:#1a1a2e;border-color:#1a1a2e;color:#fff}
   .app-tab{padding:12px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:#64748b;border-bottom:3px solid transparent;transition:all .15s}
   .app-tab:hover{color:#1a1a2e}
   .app-tab.active{color:#3b82f6;border-bottom-color:#3b82f6}
@@ -1168,6 +1175,7 @@ function switchAppTab(tab){
   document.getElementById('app-tab-cotacao').classList.toggle('hidden',tab!=='cotacao');
   document.getElementById('app-tab-recebimentos').classList.toggle('hidden',tab!=='recebimentos');
   document.getElementById('app-tab-mapavendas').classList.add('hidden');
+  document.getElementById('app-tab-crmseven').classList.add('hidden');
   document.getElementById('tabbtn-montar').classList.toggle('active',tab==='montar');
   document.getElementById('tabbtn-salvos').classList.toggle('active',tab==='salvos');
   document.getElementById('tabbtn-cotacao').classList.toggle('active',tab==='cotacao');
@@ -1182,33 +1190,44 @@ function switchAppTab(tab){
 
 const GRUPOS_MAIN=['app-tab-montar','app-tab-salvos','app-tab-cotacao','app-tab-recebimentos','app-tab-mapavendas','app-tab-crmseven'];
 const SUBTABS_ROWS=['subtabs-compras','subtabs-vendas','subtabs-financeiro','subtabs-rhsseven'];
+const CATEGORIAS_MCMOTO=['compras','vendas','financeiro'];
 let _mapaTabPendente=null;
+let _ultimaCategoriaMcMoto='compras';
 
 function switchGrupo(grupo){
-  document.getElementById('grupobtn-compras').classList.toggle('active',grupo==='compras');
-  document.getElementById('grupobtn-vendas').classList.toggle('active',grupo==='vendas');
-  document.getElementById('grupobtn-financeiro').classList.toggle('active',grupo==='financeiro');
+  document.getElementById('grupobtn-mcmoto').classList.toggle('active',grupo==='mcmoto');
   document.getElementById('grupobtn-rhsseven').classList.toggle('active',grupo==='rhsseven');
 
-  document.getElementById('subtabs-compras').classList.toggle('hidden',grupo!=='compras');
-  document.getElementById('subtabs-vendas').classList.toggle('hidden',grupo!=='vendas');
-  document.getElementById('subtabs-financeiro').classList.toggle('hidden',grupo!=='financeiro');
+  document.getElementById('categorias-mcmoto').classList.toggle('hidden',grupo!=='mcmoto');
   document.getElementById('subtabs-rhsseven').classList.toggle('hidden',grupo!=='rhsseven');
 
-  if(grupo==='compras'){
-    switchAppTab('montar');
-  }else if(grupo==='rhsseven'){
+  if(grupo==='mcmoto'){
+    switchCategoriaMcMoto(_ultimaCategoriaMcMoto);
+  }else{
+    CATEGORIAS_MCMOTO.forEach(c=>document.getElementById('subtabs-'+c).classList.add('hidden'));
     GRUPOS_MAIN.forEach(id=>document.getElementById(id).classList.add('hidden'));
     const chip=document.getElementById('ped-chip');
     if(chip) chip.classList.add('hidden');
     const primeiraSub=document.querySelector('#subtabs-rhsseven .sub-rhsseven');
     if(primeiraSub) abrirSubAbaRHSSeven(primeiraSub.dataset.target,primeiraSub);
+  }
+}
+
+function switchCategoriaMcMoto(categoria){
+  _ultimaCategoriaMcMoto=categoria;
+  CATEGORIAS_MCMOTO.forEach(c=>{
+    document.getElementById('catbtn-'+c).classList.toggle('active',c===categoria);
+    document.getElementById('subtabs-'+c).classList.toggle('hidden',c!==categoria);
+  });
+
+  if(categoria==='compras'){
+    switchAppTab('montar');
   }else{
     GRUPOS_MAIN.forEach(id=>document.getElementById(id).classList.add('hidden'));
     document.getElementById('app-tab-mapavendas').classList.remove('hidden');
     const chip=document.getElementById('ped-chip');
     if(chip) chip.classList.add('hidden');
-    const primeiraSub=document.querySelector('#subtabs-'+grupo+' .sub-mapavendas');
+    const primeiraSub=document.querySelector('#subtabs-'+categoria+' .sub-mapavendas');
     if(primeiraSub) abrirSubAbaMapa(primeiraSub.dataset.mapatab,primeiraSub);
   }
 }
