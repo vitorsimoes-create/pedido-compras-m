@@ -45,7 +45,7 @@ dias = [segunda, segunda+1, ..., hoje]             # inclusive, de segunda até 
 
 ### Passo 2 — reconstrução do saldo devedor dia a dia, por unidade
 Para cada cliente **e cada unidade** (3, 4, 5 separadamente), junta dois conjuntos de títulos a receber (`TREC_RECEBER_PAGAR_FK = 'R'`):
-- **`TREC_ABERTO`**: todos os títulos ainda em aberto hoje (sem data de baixa).
+- **`TREC_ABERTO`**: todos os títulos ainda em aberto hoje (sem data de baixa). Usa `TREC_SALDO_TITULO` (saldo já líquido de eventuais pagamentos parciais em títulos com situação `PP`), não `TREC_VALOR_TITULO` — usar o valor cheio nesse caso supervaloriza o saldo de títulos parcialmente pagos.
 - **`TREC_BAIXADO`**: títulos já pagos, mas apenas os baixados nos últimos ~95 dias antes da segunda-feira da semana analisada (janela de performance — títulos pagos há mais tempo não poderiam estar em aberto em nenhum dia da semana atual de qualquer forma).
 
 Saldo de um cliente/unidade em uma data de referência `d`:
