@@ -18,7 +18,7 @@ Réplica da aba **MC MOTO → Compras** (mesmo fluxo, mesmas regras de interface
 
 ### Fonte de dados: `RAW_DATA_SEVEN`
 
-Array JS embutido em `index.html` (~21.800 itens), gerado pelo script local `gerar_raw_data_seven.py` (não versionado; **atualização manual** — não está em tarefa agendada). Um item por **produto + unidade** (o mesmo código de produto pode aparecer nas 3 unidades com estoque/custo próprios; a chave composta usada no JS é `codigo_unidade`).
+Array JS embutido em `index.html` (~21.800 itens), gerado pelo script local `gerar_raw_data_seven.py` (não versionado; roda diariamente na tarefa `atualizacao-diaria-seven`). Um item por **produto + unidade** (o mesmo código de produto pode aparecer nas 3 unidades com estoque/custo próprios; a chave composta usada no JS é `codigo_unidade`).
 
 | Campo | Significado | Origem |
 |---|---|---|
@@ -52,7 +52,7 @@ Painel nativo de `index.html` (não iframe), com 3 sub-categorias via `switchCat
 
 ### Contas a Pagar e Contas a Receber
 
-Duas páginas geradas pelo script local `gerar_contas_seven.py` (não versionado; **atualização manual**, não agendada), embutidas via iframe: `contas-pagar-seven.html` e `contas-receber-seven.html`. Ambas cobrem as **unidades 3, 4 e 5** e compartilham a mesma estrutura:
+Duas páginas geradas pelo script local `gerar_contas_seven.py` (não versionado; roda diariamente na tarefa `atualizacao-diaria-seven`), embutidas via iframe: `contas-pagar-seven.html` e `contas-receber-seven.html`. Ambas cobrem as **unidades 3, 4 e 5** e compartilham a mesma estrutura:
 
 - **Dois modos**, alternados por botões: **"Em aberto"** e **"Quitadas (últimos 12 meses)"**.
 - **Filtro de unidade de negócio** (checkboxes 3/4/5, todas marcadas por padrão) — todos os KPIs, gráfico e detalhe são recalculados no navegador conforme a seleção.
