@@ -12,6 +12,40 @@ Mecânica compartilhada com o restante do Mapa de Vendas: mesmo cálculo de MC (
 
 Iframe separado, `crm-seven.html`, escopo declarado "Unidades 3 e 4". Painel próprio, independente do sistema de navegação por senha/categoria do restante do painel. Não detalhado nesta documentação (arquivo autocontido, fora do escopo revisado).
 
+## Compras
+
+Réplica da aba **MC MOTO → Compras** (mesmo fluxo, mesmas regras de interface), mas alimentada pelo banco **`projeto_f7`** da SEVEN, unidades **3, 4 e 5**. Conteúdo nativo de `index.html` (`app-tab-comprasseven`), com 3 sub-abas: Montar Pedido, Cotação, Pedidos Salvos. **Recebimentos ficou de fora por decisão explícita** — não existe fonte confiável de notas de entrada no espelho da SEVEN (a candidata `TMOV_EXTRA` filtrada por fornecedor tem só ~1 registro por unidade em ~3 anos).
+
+### Fonte de dados: `RAW_DATA_SEVEN`
+
+Array JS embutido em `index.html` (~21.800 itens), gerado pelo script local `gerar_raw_data_seven.py` (não versionado; **atualização manual** — não está em tarefa agendada). Um item por **produto + unidade** (o mesmo código de produto pode aparecer nas 3 unidades com estoque/custo próprios; a chave composta usada no JS é `codigo_unidade`).
+
+| Campo | Significado | Origem |
+|---|---|---|
+| `c` | Código do produto | `TMER_ESTOQUE.TMER_CODIGO_PRI_FK_PK` |
+| `u` | Unidade de negócio (3, 4 ou 5) | `TMER_ESTOQUE.TMER_UNIDADE_FK_PK` |
+| `d` | Descrição | `TMER_MERCADORIA.TMER_NOME` |
+| `p` | Custo médio | `TMER_ESTOQUE.TMER_CUSTO_MEDIO` |
+| `k` | Pico de vendas mensal (máximo por mês nos últimos 12m, **nunca soma** — mesma regra da MC MOTO) | `vendas_para_ponto_de_pedido_12m` |
+| `e` | Estoque atual | `TMER_ESTOQUE.TMER_ESTOQUE_ATUAL` |
+| `s` | Sugestão de compra — **sempre 0** (não existe esse conceito nos dados da SEVEN; quantidade default ao adicionar é 1) | — |
+| `cf` | Código original/fabricante | `TMER_MERCADORIA.TMER_CODIGO_ORIGINAL` |
+| `f` | Fornecedor principal (fantasia, ou razão social) | `TFOR_FORNECEDOR` via `TMER_FORNECEDOR_PRINCIPAL_FK` |
+| `g` | Grupo de produto — **vem classificado do próprio banco** (`TMER_GRUPO_MERCADORIA`), sem reclassificação por palavra-chave como na MC MOTO | mapeamento fixo código→nome |
+
+Filtros aplicados na geração: só itens com `TMER_ATIVO_COMPRA='S'` e fornecedor principal ≠ 9999 (cadastro "DEMONSTRACAO"). Grupos `001`–`004` ("ERRO") caem em `DIVERSOS`.
+
+### Diferenças em relação ao Compras da MC MOTO
+
+1. **Filtro de Unidade** (checkboxes 3/4/5, todas marcadas por padrão) — não existe na MC MOTO.
+2. **Sem badge "Comprar?"/regra de comissão** — o banco da SEVEN não tem o campo de comissão que alimenta essa regra na MC MOTO; a coluna foi removida por decisão explícita.
+3. **Sem sugestão de compra** — o filtro padrão é "Todos os itens" (não "Com sugestão"), e a quantidade default ao adicionar é sempre 1.
+4. Armazenamento separado em `localStorage`: `seven_pedidos_salvos` e `seven_cotacoes` (não se misturam com os da MC MOTO).
+5. O modal de exportação é **compartilhado** entre MC MOTO e SEVEN — a variável `_pedidoAtivoFonte` decide título, builders de CSV/PDF (com coluna Unidade, sem Sugestão/Comprar?) e qual pedido o botão "Salvar" grava.
+6. Na cotação, o preço respondido pelo fornecedor é **por código de produto** (não por unidade) — se o mesmo produto estiver na cotação para duas unidades, o preço importado vale para as duas linhas.
+
+Todo o resto (busca E/OU, multi-seleção de fornecedor, "adicionar todos" com confirmação acima de 200 itens, exportações texto/CSV/PDF, fluxo completo de cotação com link HTML/planilha e "comprar pelo menor preço") segue as mesmas regras documentadas em [01-compras](01-compras.md).
+
 ## Financeiro
 
 Painel nativo de `index.html` (não iframe), com 3 sub-categorias via `switchCategoriaFinanceiroSeven`:

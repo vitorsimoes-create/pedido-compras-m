@@ -88,6 +88,12 @@ Qualquer mudança de conteúdo/regra de negócio do Mapa de Vendas (abas Vendas,
 4. `git status` para confirmar que **apenas** `risco-cliente.html` mudou (o script `.py` em si nunca é versionado).
 5. Commit ("Atualização diária automática da análise de risco de inadimplência") e push, se houve mudança de conteúdo.
 
+## Fluxo 4 — Compras SEVEN (`RAW_DATA_SEVEN` em `index.html`) — manual
+
+1. Roda-se `gerar_raw_data_seven.py` (script local, não versionado) **manualmente, sob demanda** — este fluxo **não está em nenhuma tarefa agendada**; os dados da aba RHS/SEVEN → Compras ficam congelados até a próxima execução manual.
+2. O script conecta somente em `projeto_f7` (read-only), monta os ~21.800 itens (unidades 3, 4 e 5) e substitui in-place a linha `const RAW_DATA_SEVEN = [...];` de `index.html`. Regras de geração (pico máximo-por-mês, filtros de item ativo/fornecedor demo): ver [`04-rhs-seven.md`](04-rhs-seven.md).
+3. Depois: validar sintaxe JS do `index.html`, `git add index.html`, commit e push.
+
 ## Observação geral sobre "atualidade" dos dados
 
 Como não existe consulta ao vivo, qualquer número exibido no painel reflete apenas a última execução bem-sucedida da tarefa correspondente — não o estado atual do banco no momento em que o usuário está olhando a tela. Cada painel gerado por script carrega seu próprio timestamp de geração (`data-atualizacao` em `index.html`; "Gerado em" no Mapa de Vendas; "Gerado em" no relatório de Risco/Cliente) para permitir conferir a defasagem.
