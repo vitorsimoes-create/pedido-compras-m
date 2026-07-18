@@ -94,6 +94,12 @@ Qualquer mudança de conteúdo/regra de negócio do Mapa de Vendas (abas Vendas,
 2. O script conecta somente em `projeto_f7` (read-only), monta os ~21.800 itens (unidades 3, 4 e 5) e substitui in-place a linha `const RAW_DATA_SEVEN = [...];` de `index.html`. Regras de geração (pico máximo-por-mês, filtros de item ativo/fornecedor demo): ver [`04-rhs-seven.md`](04-rhs-seven.md).
 3. Depois: validar sintaxe JS do `index.html`, `git add index.html`, commit e push.
 
+## Fluxo 5 — Contas a Pagar/Receber SEVEN — manual
+
+1. Roda-se `gerar_contas_seven.py` (script local, não versionado) **manualmente, sob demanda** — também fora de tarefa agendada.
+2. O script conecta somente em `projeto_f7` (read-only) e sobrescreve `contas-pagar-seven.html` e `contas-receber-seven.html` (embutidos via iframe em RHS/SEVEN → Financeiro). Regras (saldo líquido em aberto, quitadas 12 meses, **deduplicação obrigatória da `TPAG_BAIXADO`**, aging recalculado no navegador): ver [`04-rhs-seven.md`](04-rhs-seven.md).
+3. Depois: validar sintaxe JS dos dois HTMLs, `git add` dos dois arquivos, commit e push.
+
 ## Observação geral sobre "atualidade" dos dados
 
 Como não existe consulta ao vivo, qualquer número exibido no painel reflete apenas a última execução bem-sucedida da tarefa correspondente — não o estado atual do banco no momento em que o usuário está olhando a tela. Cada painel gerado por script carrega seu próprio timestamp de geração (`data-atualizacao` em `index.html`; "Gerado em" no Mapa de Vendas; "Gerado em" no relatório de Risco/Cliente) para permitir conferir a defasagem.

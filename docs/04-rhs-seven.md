@@ -50,20 +50,24 @@ Todo o resto (busca E/OU, multi-seleção de fornecedor, "adicionar todos" com c
 
 Painel nativo de `index.html` (não iframe), com 3 sub-categorias via `switchCategoriaFinanceiroSeven`:
 
-### Contas a Pagar
-⚠️ **Este rótulo existe em dois lugares diferentes do painel, com implementações diferentes:**
-- **RHS/SEVEN → Financeiro → Contas a Pagar**: hoje é apenas um placeholder **"Em breve."** — não implementado.
-- A funcionalidade de Contas a Pagar **real e funcional** do projeto vive em outro lugar: **MC MOTO → Financeiro → Contas a Pagar**, que é o deep-link para dentro do Mapa de Vendas (`mapa-vendas.html`). Essa versão:
-  - Traz títulos em aberto (`SITUACAO='A'`) a partir de uma data-base fixa configurada no gerador.
-  - Classifica cada título por vencimento: **vencida** (`vencimento < hoje`), **até 30 dias** (`vencimento < hoje+30`), ou **futura** (demais casos).
-  - Mostra cards de KPI (Total em aberto, Vencidas, Vencem em 30 dias, Futuras >30 dias) e um gráfico de barras por mês de vencimento (agrupando qualquer coisa além de 12 meses em um bucket "Após 12m").
-  - Lista detalhada agrupada/recolhível por mês de vencimento, com o mês atual e qualquer mês vencido auto-expandidos, e cabeçalho vermelho para meses vencidos.
+### Contas a Pagar e Contas a Receber
 
-### Contas a Receber
-Placeholder **"Em breve."** — não implementado.
+Duas páginas geradas pelo script local `gerar_contas_seven.py` (não versionado; **atualização manual**, não agendada), embutidas via iframe: `contas-pagar-seven.html` e `contas-receber-seven.html`. Ambas cobrem as **unidades 3, 4 e 5** e compartilham a mesma estrutura:
+
+- **Dois modos**, alternados por botões: **"Em aberto"** e **"Quitadas (últimos 12 meses)"**.
+- **Filtro de unidade de negócio** (checkboxes 3/4/5, todas marcadas por padrão) — todos os KPIs, gráfico e detalhe são recalculados no navegador conforme a seleção.
+- **Aging dos títulos em aberto** (mesma regra do Contas a Pagar do Mapa de Vendas): **vencida** (`vencimento < hoje`), **até 30 dias** (`vencimento < hoje+30`), **futura** (demais). O aging é recalculado contra a data em que a página está sendo vista — a classificação "envelhece" sozinha entre gerações; só os saldos exigem reexecução do script.
+- KPIs (Total em aberto / Vencidas / Vencem em 30 dias / Futuras) + gráfico de barras por mês de vencimento, com bucket "Após 12m" para qualquer vencimento além de 12 meses (o que também absorve datas digitadas erradas no ERP, ex. um título com vencimento no ano 2502).
+- Fontes e regras específicas:
+  - **Pagar em aberto**: `TPAG_ABERTO` com `TPAG_SALDO_TITULO > 0` (saldo líquido de pagamentos parciais — situações `AB` e `PP`). Detalhe: lista de títulos agrupada por mês de vencimento (accordion), mês vencido/atual auto-expandidos, cabeçalho vermelho para mês com título vencido.
+  - **Pagar quitadas (12m)**: `TPAG_BAIXADO`, situação `LQ`, pagamento (`TPAG_DATA_ULTIMO_PAGAMENTO`) nos últimos 12 meses. ⚠️ **Essa tabela-espelho tem duplicação massiva (~66x)** — verificado em 18/07/2026: 103.675 linhas correspondiam a apenas 1.575 títulos reais. A geração **deduplica obrigatoriamente** por chave natural (unidade, tipo, número, parcela, fornecedor). Detalhe: tabela agregada por fornecedor (títulos pagos, último pagamento, total pago), ordenada por total.
+  - **Receber em aberto**: `TREC_ABERTO` com `TREC_RECEBER_PAGAR_FK='R'` e `TREC_SALDO_TITULO > 0`. Detalhe: tabela agregada **por cliente** (títulos, vencido, maior atraso em dias, vence em 30d, futuro, total), ordenada pelo maior valor vencido, linha vermelha para quem tem saldo vencido.
+  - **Receber quitadas (12m)**: `TREC_BAIXADO`, situação `LQ`, baixa nos últimos 12 meses (essa tabela **não** tem a duplicação da TPAG — verificado; ainda assim a geração deduplica por segurança). Detalhe: tabela agregada por cliente (títulos recebidos, último recebimento, total recebido).
+
+Nota: **MC MOTO → Financeiro → Contas a Pagar** continua existindo em separado (deep-link para dentro do Mapa de Vendas, banco `mc_moto`) — são painéis distintos com fontes distintas.
 
 ### Risco/Cliente
-Único painel funcional dessa seção, embutido via iframe (`risco-cliente.html`), gerado diariamente pelo script `gerar_risco_cliente.py`. Ver metodologia completa abaixo.
+Embutido via iframe (`risco-cliente.html`), gerado diariamente pelo script `gerar_risco_cliente.py`. Ver metodologia completa abaixo.
 
 ## Metodologia — Risco de Inadimplência por Cliente
 
