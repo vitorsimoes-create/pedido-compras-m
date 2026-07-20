@@ -10,7 +10,7 @@ A rotina tem duas partes:
 
 | Parte | Banco | O que atualiza |
 |---|---|---|
-| A — MC MOTO | `mc_moto` | `RAW_DATA` (campos `e`, `k`, `cf`, `f`, `nc`), `RECEBIMENTOS_DB`, `CMV_MENSAL` em `index.html`; roda `atualizar_mapa.py` para regenerar `Mapa de Vendas.html` e ressincroniza a cópia publicada `mapa-vendas.html`; ressincroniza `painel-caixa.html` a partir do snapshot local "painel_caixa feito.html" quando ele muda; roda `gerar_contas_receber_mcmoto.py` (→ `contas-receber-mcmoto.html`) e `gerar_vendas_historicas_mcmoto.py` (→ `vendas-historicas.html`) |
+| A — MC MOTO | `mc_moto` | `RAW_DATA` (campos `e`, `k`, `cf`, `f`, `nc`), `RECEBIMENTOS_DB`, `CMV_MENSAL` em `index.html`; roda `atualizar_mapa.py` para regenerar `Mapa de Vendas.html` e ressincroniza a cópia publicada `mapa-vendas.html`; ressincroniza `painel-caixa.html` a partir do snapshot local "painel_caixa feito.html" quando ele muda; roda `gerar_contas_receber_mcmoto.py` (→ `contas-receber-mcmoto.html`), `gerar_vendas_historicas_mcmoto.py` (→ `vendas-historicas.html`) e `gerar_vendas_comissao_mcmoto.py` (→ `vendas-comissao.html`) |
 | B — SEVEN | `projeto_f7` (read-only) | Roda os 3 scripts da SEVEN: `gerar_risco_cliente.py` (→ `risco-cliente.html`), `gerar_raw_data_seven.py` (→ `RAW_DATA_SEVEN` em `index.html`) e `gerar_contas_seven.py` (→ `contas-pagar-seven.html` + `contas-receber-seven.html`) |
 
 Nota histórica: a antiga Tarefa Agendada do Windows que rodava `atualizar_mapa.py` às 19h ficou redundante — desde 20/07/2026 o Mapa é gerado pela própria rotina diária.

@@ -34,7 +34,7 @@ Cada clique passa primeiro pelo gate de senha (ver seção abaixo) antes de troc
 
 **Dentro de MC MOTO** (`switchCategoriaMcMoto`, pills em `#categorias-mcmoto`):
 - 🛍️ **Compras** (`compras`, categoria padrão) → abre a aba nativa "Montar Pedido" dentro do próprio `index.html`, com sub-abas internas: Montar Pedido, Cotação, Pedidos Salvos, Recebimentos.
-- 📈 **Vendas** (`vendas`) → as 5 primeiras sub-abas são deep-links para dentro do iframe `mapa-vendas.html` (`abrirSubAbaMapa`): Painel Mensal, Vendas Diárias, Grupo de Produto, Consistência por Grupo, Venda por Fornecedor. A 6ª, **Vendas Históricas**, é aba nativa de `index.html` com iframe próprio (`vendas-historicas.html`, aberta por `abrirSubAbaVendasHist`).
+- 📈 **Vendas** (`vendas`) → as 5 primeiras sub-abas são deep-links para dentro do iframe `mapa-vendas.html` (`abrirSubAbaMapa`): Painel Mensal, Vendas Diárias, Grupo de Produto, Consistência por Grupo, Venda por Fornecedor. As duas últimas são abas nativas de `index.html` com iframe próprio: **Vendas Históricas** (`vendas-historicas.html`, `abrirSubAbaVendasHist`) e **Vendas por Grupo de Comissão** (`vendas-comissao.html`, `abrirSubAbaVendasComissao`).
 - 💰 **Financeiro** (`financeiro`) → duas sub-abas: **Contas a Pagar** (deep-link para dentro do iframe `mapa-vendas.html`, que inclui também o Painel de Caixa embutido via `painel-caixa.html`) e **Contas a Receber** (aba nativa de `index.html` com iframe próprio, `contas-receber-mcmoto.html`, aberta por `abrirSubAbaFinanceiroMc`).
 
 **Dentro de RHS/SEVEN** (`abrirSubAbaRHSSeven`, botões em `#subtabs-rhsseven`):

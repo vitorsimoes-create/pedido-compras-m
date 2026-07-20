@@ -121,6 +121,15 @@ Diferente das demais sub-abas de Vendas, esta **não** vive no iframe do Mapa �
 - Filtro de período (12 / 24 meses / todo o histórico), gráfico de barras por mês, e tabela por mês com: pedidos, itens, vendas líquidas, MC, MC%, ticket médio (`vendas/pedidos`) e **variação vs. o mesmo mês do ano anterior**.
 - O mês corrente é marcado como **parcial** e fica de fora da comparação anual (senão compararia mês incompleto com mês cheio).
 
+## Vendas por Grupo de Comissão (aba nativa de `index.html`)
+
+Também aba nativa (`app-tab-vendascomissao`, iframe `vendas-comissao.html`, aberta por `abrirSubAbaVendasComissao`), gerada pelo script local `gerar_vendas_comissao_mcmoto.py` (roda na rotina diária, Parte A) a partir do banco `mc_moto`.
+
+- Agrupa as vendas pela **faixa de comissão do produto** (`produtos.COMISSAO_AVISTA`): 8%, 5%, 2%, 1%, 0,5%, 0%, "Sem comissão" (e o que mais existir). Cada faixa aparece separada.
+- **Vendas líquidas** com a mesma netagem de devoluções/estornos do CMV e do pico (na própria linha de `itens`): `SUM(VL_UNIT × (QUANTIDADE − QTD_DEVOLVIDA − QTD_ESTORNADA))`; custo análogo; `MC = vendas − custo`.
+- Filtro de período (3 / 6 / 12 meses / todo o histórico), **gráfico de barras por faixa** (valor + participação %), e tabela com participação %, MC, MC% e quantidade líquida, além de uma linha de total.
+- Nota: a distribuição atual concentra-se na faixa **1%** (~59% das vendas) e **5%** (~30%); as faixas 8% e 5% são as que o restante do painel marca como "Não comprar"/"A avaliar" (regra `nc`).
+
 ## Inconsistências conhecidas (documentadas como fato, não como bug pendente)
 
 Estas diferenças são reais no código atual e devem ser levadas em conta ao comparar números entre sub-abas — não são necessariamente erros a corrigir, mas comportamento que precisa ser conhecido:
