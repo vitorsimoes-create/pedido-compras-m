@@ -1,6 +1,6 @@
 # MC MOTO → Vendas
 
-Todo o conteúdo desta aba vive dentro do iframe `mapa-vendas.html` (cópia publicada de `Mapa de Vendas.html`, gerado por `atualizar_mapa.py` — ver [`06-pipeline-dados.md`](06-pipeline-dados.md)). O `index.html` apenas faz deep-link para as sub-abas internas desse iframe via `trocarAba(id)`.
+A maior parte do conteúdo desta aba vive dentro do iframe `mapa-vendas.html` (cópia publicada de `Mapa de Vendas.html`, gerado por `atualizar_mapa.py` — ver [`06-pipeline-dados.md`](06-pipeline-dados.md)). O `index.html` faz deep-link para as sub-abas internas desse iframe via `trocarAba(id)` (Painel Mensal, Vendas Diárias, Grupo de Produto, Consistência por Grupo, Venda por Fornecedor). **Exceção**: a sub-aba **Vendas Históricas** é uma aba nativa de `index.html` (não passa pelo iframe do Mapa) — ver seção própria ao final.
 
 Termo recorrente: **"fator de desconto" (`descontoPct`)** — um campo global, editável pelo usuário e persistido em `localStorage`, que ajusta o valor de venda "bruto" para simular o efeito de descontos concedidos. É aplicado como `f = 1 - descontoPct/100`. **Importante: esse fator não é aplicado de forma consistente em todas as sub-abas** — ver seção "Inconsistências conhecidas" ao final.
 
@@ -111,6 +111,15 @@ mcPct      = vendas > 0 ? (vendas - cmv) / vendas : null
 - `mc = vendas*f - custo`; `pctMc = mc / (vendas*f)`; célula vermelha (`pct-bad`) apenas quando `pctMc < 0` (sem banda de ±10% aqui, diferente de Consistência por Grupo).
 - Ticket médio = `vendas / pedidos`.
 - Checkbox "CLIENTE CONSUMIDOR" permite excluir vendas de balcão/consumidor anônimo do ranking.
+
+## Vendas Históricas (aba nativa de `index.html`)
+
+Diferente das demais sub-abas de Vendas, esta **não** vive no iframe do Mapa — é a aba nativa `app-tab-vendashistoricas`, com iframe próprio (`vendas-historicas.html`), aberta por `abrirSubAbaVendasHist`. A página é gerada pelo script local `gerar_vendas_historicas_mcmoto.py` (não versionado; roda na rotina diária `atualizacao-diaria-painel`, Parte A) a partir do banco `mc_moto`.
+
+- Mostra o **faturamento mensal de todo o histórico disponível** (65 meses, desde 2021 — não só 12).
+- **Definição de "vendas líquidas"** idêntica à do Painel Mensal: `SUM(vendas.VL_TOTAL)` de vendas não canceladas (`STATUS <> '3'`) **menos devoluções** (`SUM(devolucoes.VL_TOTAL_LIQ)`), atribuídas ao mês da venda original. Custo líquido = `SUM(itens.QUANTIDADE*itens.CUSTO)` menos custo devolvido; `MC = vendas − custo`. *(O CMV mensal deste cálculo bate com a variável `CMV_MENSAL` do painel — validado.)*
+- Filtro de período (12 / 24 meses / todo o histórico), gráfico de barras por mês, e tabela por mês com: pedidos, itens, vendas líquidas, MC, MC%, ticket médio (`vendas/pedidos`) e **variação vs. o mesmo mês do ano anterior**.
+- O mês corrente é marcado como **parcial** e fica de fora da comparação anual (senão compararia mês incompleto com mês cheio).
 
 ## Inconsistências conhecidas (documentadas como fato, não como bug pendente)
 
