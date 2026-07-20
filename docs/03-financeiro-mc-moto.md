@@ -9,7 +9,7 @@ Página `contas-receber-mcmoto.html`, gerada pelo script local `gerar_contas_rec
 - **Dois modos**: **"Em aberto"** (situação `A`, saldo = `VALOR - VALOR_RECEBIDO > 0`) e **"Recebidas (últimos 12 meses)"** (situação `Q`, com `DATA_PAGAMENTO` na janela; valor considerado = `VALOR_RECEBIDO`, ou `VALOR` quando `VALOR_RECEBIDO` está zerado).
 - **Aging dos títulos em aberto** com a mesma regra padrão do projeto (vencida / ≤30 dias / futura, recalculada no navegador contra a data atual) + KPIs + gráfico por mês de vencimento.
 - Detalhe do modo aberto: tabela de títulos (cliente, documento/NF, emissão, vencimento, situação, saldo) — o volume é naturalmente pequeno, pois a venda da MC MOTO é majoritariamente à vista.
-- Detalhe do modo recebidas: **pré-agregado no gerador** por cliente (títulos, último recebimento, total) e por mês — diferente das páginas da SEVEN, não há filtro de unidade aqui, então não é preciso embutir título a título; a página fica leve (~44KB).
+- Detalhe do modo recebidas: **agrupado por mês** (um accordion por mês, mais recente primeiro, mês corrente aberto por padrão); dentro de cada mês, os clientes aparecem ordenados pelo maior valor recebido, com total do mês no cabeçalho. Os dados vão **pré-agregados por (mês, cliente)** no gerador (payload `pagosMesCliente`) — diferente das páginas da SEVEN, não há filtro de unidade aqui, então não é preciso embutir título a título; a página fica leve.
 - Nota de leitura: o cliente `000001` ("CLIENTE CONSUMIDOR") concentra as vendas de balcão e por isso domina o topo do ranking de recebidas.
 
 # Recebimentos / Meta / CMV (dentro da categoria Compras)
