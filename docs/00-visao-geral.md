@@ -35,7 +35,7 @@ Cada clique passa primeiro pelo gate de senha (ver seção abaixo) antes de troc
 **Dentro de MC MOTO** (`switchCategoriaMcMoto`, pills em `#categorias-mcmoto`):
 - 🛍️ **Compras** (`compras`, categoria padrão) → abre a aba nativa "Montar Pedido" dentro do próprio `index.html`, com sub-abas internas: Montar Pedido, Cotação, Pedidos Salvos, Recebimentos.
 - 📈 **Vendas** (`vendas`) → **não é conteúdo nativo de `index.html`**: mostra o iframe de `mapa-vendas.html` e navega para dentro dele (`abrirSubAbaMapa`), nas sub-abas: Painel Mensal, Vendas Diárias, Grupo de Produto, Consistência por Grupo, Venda por Fornecedor.
-- 💰 **Financeiro** (`financeiro`) → também deep-link para dentro do iframe `mapa-vendas.html`, sub-aba única: Contas a Pagar.
+- 💰 **Financeiro** (`financeiro`) → duas sub-abas: **Contas a Pagar** (deep-link para dentro do iframe `mapa-vendas.html`, que inclui também o Painel de Caixa embutido via `painel-caixa.html`) e **Contas a Receber** (aba nativa de `index.html` com iframe próprio, `contas-receber-mcmoto.html`, aberta por `abrirSubAbaFinanceiroMc`).
 
 **Dentro de RHS/SEVEN** (`abrirSubAbaRHSSeven`, botões em `#subtabs-rhsseven`):
 - 🏢 **Unidades de Negócio** (`unidades`, padrão) → **também** é um deep-link para dentro do mesmo iframe `mapa-vendas.html` (chama `trocarAba('unidades')`) — ou seja, é o mesmo arquivo/iframe usado pela aba Vendas da MC MOTO, só que mostrando dados agregados por unidade de negócio (banco `projeto_f7`).

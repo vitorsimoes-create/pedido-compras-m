@@ -2,23 +2,24 @@
 
 O painel é 100% estático: não há consulta a banco de dados feita pelo navegador. Todo dado exibido vem de um **snapshot gravado dentro do próprio HTML publicado**, atualizado por scripts Python locais rodando em tarefas agendadas na máquina do usuário.
 
-## Tarefas agendadas
+## Tarefa agendada
 
-**Regra estrutural (decisão de 18/07/2026): existem exatamente 2 rotinas diárias, uma por banco de dados.** Toda aba/sub-aba nova criada no painel deve ser incluída no escopo da rotina do banco correspondente (editando o `SKILL.md` da tarefa) — nunca criar uma terceira rotina.
+**Regra estrutural (decisão de 20/07/2026, substituindo o esquema anterior de 2 rotinas por banco): existe exatamente 1 rotina diária, `atualizacao-diaria-painel` (~06:00), que roda os dois bancos juntos e publica num commit único.** Toda aba/sub-aba nova criada no painel deve ser incluída no escopo dessa rotina (editando o `SKILL.md` da tarefa em `C:\Users\Vitor\.claude\scheduled-tasks\atualizacao-diaria-painel\`) — nunca criar uma segunda rotina.
 
-| Tarefa (`taskId`) | Frequência | O que atualiza | Banco usado |
-|---|---|---|---|
-| `atualizacao-diaria-mcmoto` | Diária, ~06:00 | `RAW_DATA` (campos `e`, `k`, `cf`, `f`, `nc`), `RECEBIMENTOS_DB`, `CMV_MENSAL` em `index.html`; também ressincroniza `mapa-vendas.html` a partir de `Mapa de Vendas.html` (cobre MC MOTO → Compras/Recebimentos/Vendas/Contas a Pagar e RHS/SEVEN → Unidades de Negócio) | `mc_moto` |
-| `atualizacao-diaria-seven` | Diária, ~06:45 | Roda os 3 scripts da SEVEN: `gerar_risco_cliente.py` (→ `risco-cliente.html`), `gerar_raw_data_seven.py` (→ `RAW_DATA_SEVEN` em `index.html`) e `gerar_contas_seven.py` (→ `contas-pagar-seven.html` + `contas-receber-seven.html`) — cobre RHS/SEVEN → Compras e Financeiro completo | `projeto_f7` (read-only) |
-| *(fora do escopo desta doc)* `atualizar_mapa.py` | Diária, via Windows Task Scheduler local | `Mapa de Vendas.html` (o arquivo original) | `mc_moto` + `projeto_f7` |
+A rotina tem duas partes:
 
-Os horários são espaçados de propósito: as duas rotinas editam `index.html` (variáveis diferentes — `RAW_DATA` vs `RAW_DATA_SEVEN`) e não podem rodar ao mesmo tempo.
+| Parte | Banco | O que atualiza |
+|---|---|---|
+| A — MC MOTO | `mc_moto` | `RAW_DATA` (campos `e`, `k`, `cf`, `f`, `nc`), `RECEBIMENTOS_DB`, `CMV_MENSAL` em `index.html`; roda `atualizar_mapa.py` para regenerar `Mapa de Vendas.html` e ressincroniza a cópia publicada `mapa-vendas.html`; ressincroniza `painel-caixa.html` a partir do snapshot local "painel_caixa feito.html" quando ele muda; roda `gerar_contas_receber_mcmoto.py` (→ `contas-receber-mcmoto.html`) |
+| B — SEVEN | `projeto_f7` (read-only) | Roda os 3 scripts da SEVEN: `gerar_risco_cliente.py` (→ `risco-cliente.html`), `gerar_raw_data_seven.py` (→ `RAW_DATA_SEVEN` em `index.html`) e `gerar_contas_seven.py` (→ `contas-pagar-seven.html` + `contas-receber-seven.html`) |
 
-Credenciais de conexão de cada banco **não são reproduzidas aqui** — cada tarefa está restrita, por definição, a um único banco (nunca deve acessar o outro), e as credenciais reais ficam em `conexaomc.md` (arquivo local, fora do controle de versão).
+Nota histórica: a antiga Tarefa Agendada do Windows que rodava `atualizar_mapa.py` às 19h ficou redundante — desde 20/07/2026 o Mapa é gerado pela própria rotina diária.
 
-Cada tarefa segue a regra geral do projeto: só commita os arquivos que realmente mudaram, nunca cria commit vazio, e faz `git push` automaticamente ao final — sem pedir confirmação, por serem tarefas autônomas agendadas.
+Credenciais de conexão **não são reproduzidas aqui** — ficam em `conexaomc.md` (arquivo local, fora do controle de versão). Cada parte da rotina só acessa o seu próprio banco.
 
-## Fluxo 1 — Atualização diária MC MOTO (tarefa `atualizacao-diaria-mcmoto`)
+A rotina segue a regra geral do projeto: só commita os arquivos que realmente mudaram (`git add` por nome, nunca `-A`), nunca cria commit vazio, e faz `git push` automaticamente ao final.
+
+## Fluxo 1 — Parte A da rotina diária (banco `mc_moto`)
 
 1. Conecta no banco `mc_moto`.
 2. Busca e recalcula 3 conjuntos de dados (consultas validadas, reproduzidas abaixo por serem a referência "canônica" — já houve um bug de produção corrigido nessa lógica, então qualquer reimplementação deve seguir exatamente este padrão):
@@ -74,17 +75,17 @@ Arredondado a 2 casas decimais, montado como `{"YYYY-MM": valor, ...}`.
 5. `git status` para confirmar que **apenas** `index.html` e/ou `mapa-vendas.html` mudaram.
 6. Commit e push por arquivo alterado (mensagens padrão: "Atualização diária automática de estoque, vendas, fornecedores, recebimentos e CMV" para `index.html`; "Atualização diária automática do Mapa de Vendas" para `mapa-vendas.html`).
 
-## Fluxo 2 — Regeneração do Mapa de Vendas (`Mapa de Vendas.html`)
+## Fluxo 2 — Regeneração do Mapa de Vendas (`Mapa de Vendas.html`, dentro da Parte A)
 
 Processo separado, local (Windows Task Scheduler), roda `atualizar_mapa.py`:
 1. Conecta em `mc_moto` e `projeto_f7`.
 2. Reconstrói **o arquivo inteiro** a partir de um template Python embutido (`HTML_TEMPLATE`), com substituição de tokens (`__PAYLOAD__`, `__GERADO_EM__`, `__DADOS_ATE__`) — não é edição incremental.
 3. Escreve o resultado em `Mapa de Vendas.html` (original — nunca editado à mão, nunca commitado).
-4. A sincronização para o arquivo publicado (`mapa-vendas.html`) acontece no Fluxo 1 (tarefa `atualizacao-diaria-mcmoto`), não aqui.
+4. A sincronização para o arquivo publicado (`mapa-vendas.html`) acontece na sequência, dentro da própria rotina.
 
 Qualquer mudança de conteúdo/regra de negócio do Mapa de Vendas (abas Vendas, Financeiro→Contas a Pagar, Unidades de Negócio) precisa ser feita editando o template dentro de `atualizar_mapa.py` e rerodando o script — nunca editando a saída diretamente.
 
-## Fluxo 3 — Atualização diária SEVEN (tarefa `atualizacao-diaria-seven`)
+## Fluxo 3 — Parte B da rotina diária (banco `projeto_f7`)
 
 Uma única rotina roda, em sequência, os 3 scripts locais da SEVEN (todos conectam somente em `projeto_f7`, read-only; nenhum é versionado):
 

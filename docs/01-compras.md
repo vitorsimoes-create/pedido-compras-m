@@ -42,7 +42,7 @@ Regra de negócio (histórico: já houve um bug corrigido em produção que soma
 
 > `k` = a **maior** quantidade líquida vendida em **um único mês**, entre os últimos 12 meses. Nunca a soma de vários meses.
 
-Cálculo (SQL + agregação Python, rodado pela tarefa agendada `atualizacao-diaria-mcmoto` — ver [`06-pipeline-dados.md`](06-pipeline-dados.md) para a consulta exata):
+Cálculo (SQL + agregação Python, rodado pela tarefa agendada `atualizacao-diaria-painel` (Parte A) — ver [`06-pipeline-dados.md`](06-pipeline-dados.md) para a consulta exata):
 
 1. Agrupa vendas por produto e por mês (`YYYY-MM`), somando `QUANTIDADE - QTD_DEVOLVIDA - QTD_ESTORNADA` (quantidade líquida de devoluções/estornos) dos últimos 12 meses, excluindo itens cancelados.
 2. Para cada produto, `k` = o **maior** valor entre as linhas mensais desse produto (substituição, nunca soma cumulativa).

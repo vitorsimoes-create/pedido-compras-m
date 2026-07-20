@@ -1,6 +1,18 @@
-# MC MOTO → Recebimentos / Meta / CMV
+# MC MOTO → Financeiro (e Recebimentos/Meta/CMV)
 
-Apesar de ser conteúdo financeiro, esta sub-aba (**📦 Recebimentos**) vive dentro da categoria **Compras** de `index.html` (não dentro da categoria "Financeiro" da MC MOTO, que só contém "Contas a Pagar" — ver [`02-vendas.md`](02-vendas.md)). É conteúdo **nativo** de `index.html`, não do iframe do Mapa de Vendas.
+A categoria **Financeiro** da MC MOTO tem duas sub-abas: **Contas a Pagar** (deep-link para dentro do Mapa de Vendas — documentada em [`02-vendas.md`](02-vendas.md); inclui o Painel de Caixa embutido) e **Contas a Receber** (documentada abaixo). Já a sub-aba **📦 Recebimentos**, apesar de ser conteúdo financeiro, vive dentro da categoria **Compras** de `index.html` — é a segunda metade deste documento.
+
+## Contas a Receber (banco `mc_moto`)
+
+Página `contas-receber-mcmoto.html`, gerada pelo script local `gerar_contas_receber_mcmoto.py` (não versionado; roda diariamente na rotina `atualizacao-diaria-painel`, Parte A) e embutida via iframe na aba nativa `app-tab-contasrecebermc`. Fonte: tabela `contas_receber` do ERP (sem duplicação — verificado; é o banco direto, não espelho).
+
+- **Dois modos**: **"Em aberto"** (situação `A`, saldo = `VALOR - VALOR_RECEBIDO > 0`) e **"Recebidas (últimos 12 meses)"** (situação `Q`, com `DATA_PAGAMENTO` na janela; valor considerado = `VALOR_RECEBIDO`, ou `VALOR` quando `VALOR_RECEBIDO` está zerado).
+- **Aging dos títulos em aberto** com a mesma regra padrão do projeto (vencida / ≤30 dias / futura, recalculada no navegador contra a data atual) + KPIs + gráfico por mês de vencimento.
+- Detalhe do modo aberto: tabela de títulos (cliente, documento/NF, emissão, vencimento, situação, saldo) — o volume é naturalmente pequeno, pois a venda da MC MOTO é majoritariamente à vista.
+- Detalhe do modo recebidas: **pré-agregado no gerador** por cliente (títulos, último recebimento, total) e por mês — diferente das páginas da SEVEN, não há filtro de unidade aqui, então não é preciso embutir título a título; a página fica leve (~44KB).
+- Nota de leitura: o cliente `000001` ("CLIENTE CONSUMIDOR") concentra as vendas de balcão e por isso domina o topo do ranking de recebidas.
+
+# Recebimentos / Meta / CMV (dentro da categoria Compras)
 
 ## Fontes de dados
 
