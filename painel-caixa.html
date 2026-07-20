@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Painel de Caixa — MC Moto (Quitado)</title>
+<style>
+  :root{
+    --bg:#0f1419; --card:#171d26; --border:#2a3340;
+    --text:#e6edf3; --muted:#8b98a9; --accent:#4f9eff; --green:#3ecf8e;
+    --red:#ff6b6b; --orange:#ffb454; --purple:#b48cff; --pink:#ff8cc6; --teal:#4fd6c8; --yellow:#e8d44f;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; padding:24px; background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,-apple-system,sans-serif;}
+  h1{font-size:22px; margin:0 0 4px;}
+  .subtitle{color:var(--muted); font-size:13px; margin-bottom:18px;}
+  .tabs{display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid var(--border);}
+  .tab-btn{background:none; border:none; color:var(--muted); font-size:14px; font-weight:600; padding:10px 16px; cursor:pointer; border-bottom:2px solid transparent;}
+  .tab-btn.active{color:var(--text); border-bottom-color:var(--accent);}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-bottom:24px;}
+  .kpi{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px;}
+  .kpi .label{color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.5px;}
+  .kpi .value{font-size:26px; font-weight:600; margin-top:6px;}
+  .kpi .delta{font-size:12px; margin-top:4px;}
+  .up{color:var(--red);} .down{color:var(--green);} .neutral{color:var(--muted);}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;}
+  .grid.full{grid-template-columns:1fr;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px;}
+  .card h2{font-size:14px; margin:0 0 4px; font-weight:600;}
+  .card .desc{color:var(--muted); font-size:12px; margin-bottom:14px;}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; color:var(--muted); font-weight:500; padding:6px 8px; border-bottom:1px solid var(--border);}
+  td{padding:6px 8px; border-bottom:1px solid #1f2733;}
+  tr:hover td{background:#1a212b;}
+  .right{text-align:right;}
+  .legend{display:flex; gap:14px; margin-bottom:10px; font-size:11px; color:var(--muted); flex-wrap:wrap;}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .dot{width:10px; height:10px; border-radius:2px; display:inline-block;}
+  .alert{background:#2a1d1d; border:1px solid #5a2e2e; color:#ffb4b4; padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:14px;}
+  .insight{background:#1a2a3a; border:1px solid #2e4a5e; color:#b4dcff; padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:14px;}
+  footer{color:var(--muted); font-size:11px; margin-top:30px; text-align:center;}
+
+  .forn-toolbar{display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;}
+  .forn-toolbar input{background:#0f1419; border:1px solid var(--border); color:var(--text); padding:8px 12px; border-radius:6px; font-size:13px; flex:1; min-width:200px;}
+  .btn-update{background:var(--accent); color:#fff; border:none; padding:9px 18px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;}
+  .btn-update:hover{background:#3a8ce8;}
+  .btn-reset{background:none; border:1px solid var(--border); color:var(--muted); padding:9px 14px; border-radius:6px; font-size:13px; cursor:pointer;}
+  .btn-reset:hover{color:var(--text); border-color:var(--muted);}
+  .dnd-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;}
+  .dropzone{background:var(--card); border:2px dashed var(--border); border-radius:10px; padding:14px; min-height:400px; max-height:640px; overflow-y:auto;}
+  .dropzone.dragover{border-color:var(--accent); background:#16202e;}
+  .dropzone h3{font-size:13px; margin:0 0 10px; display:flex; justify-content:space-between; align-items:center;}
+  .dropzone h3 .count{color:var(--muted); font-weight:400; font-size:12px;}
+  .forn-card{background:#1d2530; border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-bottom:6px; cursor:grab; font-size:12px;}
+  .forn-card:hover{border-color:var(--accent);}
+  .forn-card.dragging{opacity:0.4;}
+  .forn-card .fn-nome{font-weight:600; color:var(--text); display:block; margin-bottom:2px;}
+  .forn-card .fn-meta{display:flex; justify-content:space-between; color:var(--muted); font-size:11px; flex-wrap:wrap; gap:4px;}
+  .forn-card .fn-badge{display:inline-block; padding:1px 6px; border-radius:8px; font-size:10px; margin-right:4px;}
+  .badge-merc{background:#2a1f3a; color:var(--purple);}
+  .badge-fixo{background:#3a2e1a; color:var(--orange);}
+  .badge-changed{background:#1a3a2a; color:var(--green);}
+  .pending-banner{background:#1a3a2a; border:1px solid #2e5a3e; color:#9eecb4; padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:14px; display:none; justify-content:space-between; align-items:center;}
+  .pending-banner.show{display:flex;}
+</style>
+</head>
+<body>
+
+<h1>Painel de Caixa — MC Moto</h1>
+<div class="subtitle">Dados atualizados direto do banco mc_moto em 2026-06-23 · Histórico de pagamentos quitados (12 meses) e vendas (6 meses)</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="principal">Painel Principal</button>
+  <button class="tab-btn" data-tab="fornecedores">Fornecedores (centro de custo)</button>
+  <button class="tab-btn" data-tab="gerencial">Indicadores Gerenciais (Planilha)</button>
+</div>
+
+<div class="tab-content active" id="tab-principal">
+
+<div class="pending-banner" id="pendingBanner"><span id="pendingText"></span></div>
+
+<div class="alert" id="alertFolha"></div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="grid full">
+  <div class="card">
+    <h2>Total pago por mês — todos os pagamentos</h2>
+    <div class="desc">Soma de Compra de Mercadoria + Custo Fixo + Custo Variável quitados · valor total no topo de cada barra · linha tracejada = média do período</div>
+    <div class="legend">
+      <span><span class="dot" style="background:#b48cff"></span>Mercadoria</span>
+      <span><span class="dot" style="background:#ffb454"></span>Custo Fixo</span>
+      <span><span class="dot" style="background:#4fd6c8"></span>Custo Variável</span>
+    </div>
+    <svg id="chartTotalPago" width="100%" height="300" viewBox="0 0 900 300"></svg>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Quitado — Compra de Mercadoria</h2>
+    <div class="desc">Distribuidoras de peças + fornecedores reclassificados · linha tracejada = média do período</div>
+    <svg id="chartMercadoriaQuitado" width="100%" height="320" viewBox="0 0 600 320"></svg>
+  </div>
+  <div class="card">
+    <h2>Quitado — Custo Fixo</h2>
+    <div class="desc">Folha, aluguel, empréstimo, impostos · linha tracejada = média do período</div>
+    <svg id="chartFixoQuitado" width="100%" height="320" viewBox="0 0 600 320"></svg>
+  </div>
+</div>
+
+<div class="grid full">
+  <div class="card">
+    <h2>Quitado — Custo Variável</h2>
+    <div class="desc">Fornecedores movidos manualmente para esta categoria · linha tracejada = média do período</div>
+    <svg id="chartVariavelQuitado" width="100%" height="180" viewBox="0 0 900 180"></svg>
+  </div>
+</div>
+
+<div class="grid full">
+  <div class="card">
+    <h2>Custo Fixo Quitado — por categoria (evolução mensal)</h2>
+    <div class="desc">Barras empilhadas — classificação fixa por nome do fornecedor</div>
+    <div class="legend" id="legendFixoCat"></div>
+    <svg id="chartFixoCategoria" width="100%" height="260" viewBox="0 0 900 260"></svg>
+  </div>
+</div>
+
+<div class="grid full">
+  <div class="card">
+    <h2>Compra de Mercadoria Quitada — por fornecedor (evolução mensal)</h2>
+    <div class="desc">Barras empilhadas dos 8 maiores fornecedores de mercadoria</div>
+    <div class="legend" id="legendMercForn"></div>
+    <svg id="chartMercForn" width="100%" height="260" viewBox="0 0 900 260"></svg>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Top fornecedores de Mercadoria (12m)</h2>
+    <table id="tblMercForn"></table>
+  </div>
+  <div class="card">
+    <h2>Top itens de Custo Fixo (12m)</h2>
+    <table id="tblFixoForn"></table>
+  </div>
+</div>
+
+</div>
+
+<div class="tab-content" id="tab-fornecedores">
+
+<div class="insight">
+  📌 Arraste os cartões entre as colunas para reclassificar o centro de custo entre <b>Compra de Mercadoria</b>, <b>Custo Fixo</b> e <b>Custo Variável</b>. Depois clique em <b>"Atualizar Painel Principal"</b>.
+</div>
+
+<div class="forn-toolbar">
+  <input type="text" id="fornSearch" placeholder="Buscar fornecedor por nome ou código...">
+  <button class="btn-reset" id="btnReset">Desfazer alterações</button>
+  <button class="btn-update" id="btnUpdate">Atualizar Painel Principal ↻</button>
+</div>
+
+<div class="dnd-grid">
+  <div class="dropzone" id="zoneMercadoria" data-zone="MERCADORIA">
+    <h3>🔧 Compra de Mercadoria <span class="count" id="countMercadoria"></span></h3>
+    <div id="listMercadoria"></div>
+  </div>
+  <div class="dropzone" id="zoneFixo" data-zone="FIXO">
+    <h3>🏢 Custo Fixo <span class="count" id="countFixo"></span></h3>
+    <div id="listFixo"></div>
+  </div>
+  <div class="dropzone" id="zoneVariavel" data-zone="VARIAVEL">
+    <h3>📊 Custo Variável <span class="count" id="countVariavel"></span></h3>
+    <div id="listVariavel"></div>
+  </div>
+</div>
+
+</div>
+
+<div class="tab-content" id="tab-gerencial">
+
+<div class="insight">
+  📌 Dados oficiais extraídos da planilha <b>"gerencial MC"</b> do Google Drive (DRE + indicadores mensais). Células marcadas com <span class="fn-badge badge-changed">estimado</span> não estavam preenchidas na planilha — foram calculadas a partir do banco mc_moto (contas_pagar quitado, vendas, itens) para fechar a série até jun/26.
+</div>
+
+<div class="card">
+  <h2>DRE Gerencial — mensal (planilha + estimativas do banco)</h2>
+  <div class="desc">Valores em R$ · linhas oficiais da planilha "gerencial MC"; lacunas preenchidas via banco de dados</div>
+  <div style="overflow-x:auto;">
+    <table id="tblGerencial"></table>
+  </div>
+</div>
+
+<div class="grid full">
+  <div class="card">
+    <h2>CAIXA/BANCOS — evolução mensal (planilha)</h2>
+    <div class="desc">Linha mais importante da planilha gerencial: variação de caixa/bancos no mês. Valores negativos = mês consumiu caixa.</div>
+    <svg id="chartCaixaBancos" width="100%" height="260" viewBox="0 0 900 260"></svg>
+  </div>
+</div>
+
+</div>
+
+<footer>Painel gerado a partir do banco mc_moto · contas_pagar (SITUACAO='Q'), fornecedores, vendas, itens · Planilha "gerencial MC" (Google Drive)</footer>
+
+<script>
+const SUPPLIERS = [{"codigo": "000409", "nome": "LM COMERCIAL E DISTRIBUIDORA LTDA", "cnpj": "70.963.418/0003-41", "centro_custo": "000011", "meses": {"2025-06": 15436.72, "2025-07": 49529.72, "2025-08": 39997.83, "2025-09": 39061.37, "2025-10": 57860.3, "2025-11": 25854.68, "2025-12": 23406.64, "2026-01": 18029.87, "2026-02": 19510.9, "2026-03": 35151.37, "2026-04": 34071.47, "2026-05": 38664.93, "2026-06": 32354.56}, "total": 428930.36, "forced_mercadoria": false}, {"codigo": "000323", "nome": "G&B AUTO PECAS ALTERNATIVAS LTDA", "cnpj": "38.843.249/0007-27", "centro_custo": "000011", "meses": {"2025-06": 4464.66, "2025-07": 16559.9, "2025-08": 15211.85, "2025-09": 9677.57, "2025-10": 21798.03, "2025-11": 4655.3, "2025-12": 10141.48, "2026-01": 8128.34, "2026-02": 8895.26, "2026-03": 10539.65, "2026-04": 14506.89, "2026-05": 18480.55, "2026-06": 12583.32}, "total": 155642.8, "forced_mercadoria": false}, {"codigo": "001619", "nome": "EMPRESTIMO ITAU", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 10444.72, "2025-08": 10444.72, "2025-09": 10481.57, "2025-10": 10444.72, "2025-11": 10444.72, "2025-12": 10444.72, "2026-01": 10444.72, "2026-02": 10444.72, "2026-03": 10444.72, "2026-04": 10444.72, "2026-05": 10444.72, "2026-06": 10444.72}, "total": 125373.49, "forced_mercadoria": false}, {"codigo": "001171", "nome": "JACKSON DE JESUS RAMETTA - ALUGUEL MC MO", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 8000.0, "2025-08": 8000.0, "2025-09": 8000.0, "2025-10": 8000.0, "2025-11": 8000.0, "2025-12": 8000.0, "2026-01": 8000.0, "2026-02": 8000.0, "2026-03": 8000.0, "2026-04": 8000.0, "2026-05": 8000.0, "2026-06": 8000.0}, "total": 96000.0, "forced_mercadoria": false}, {"codigo": "000743", "nome": "UNIFORT LTDA", "cnpj": "41.916.347/0001-66", "centro_custo": "000011", "meses": {"2025-06": 1536.35, "2025-07": 8602.27, "2025-08": 4727.54, "2025-09": 5339.54, "2025-10": 12957.68, "2025-11": 7807.52, "2025-12": 5328.64, "2026-01": 3438.85, "2026-02": 6116.1, "2026-03": 8593.15, "2026-04": 13145.24, "2026-05": 8422.48, "2026-06": 5152.86}, "total": 91168.22, "forced_mercadoria": false}, {"codigo": "001299", "nome": "COMERCIAL MOTOCICLO S/A", "cnpj": "01.407.607/0001-53", "centro_custo": "000011", "meses": {"2025-06": 3060.43, "2025-07": 16257.03, "2025-08": 8677.8, "2025-09": 5702.56, "2025-10": 10316.53, "2025-11": 6822.46, "2026-01": 5761.66, "2026-02": 5761.52, "2026-03": 5761.52, "2026-04": 5761.52, "2026-05": 2880.76}, "total": 76763.79000000001, "forced_mercadoria": false}, {"codigo": "001224", "nome": "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI", "cnpj": "34.790.420/0001-30", "centro_custo": "000011", "meses": {"2025-06": 2173.98, "2025-07": 7697.13, "2025-08": 6796.64, "2025-09": 4898.13, "2025-10": 3217.3, "2025-11": 4658.16, "2025-12": 9280.89, "2026-01": 6934.08, "2026-02": 5563.52, "2026-03": 8933.24, "2026-04": 9178.75, "2026-05": 2632.15, "2026-06": 2061.45}, "total": 74025.42, "forced_mercadoria": false}, {"codigo": "001559", "nome": "MAGNETRON INDUSTRIA E COMERCIO DE COMPON", "cnpj": "11.493.623/0003-21", "centro_custo": "000011", "meses": {"2025-07": 4690.46, "2025-08": 7494.82, "2025-09": 14396.73, "2025-10": 12685.41, "2025-11": 2125.19, "2026-03": 4850.8, "2026-04": 9701.6, "2026-05": 9701.63}, "total": 65646.64, "forced_mercadoria": false}, {"codigo": "001289", "nome": "EUROSTAR DO BRASIL S/A", "cnpj": "03.902.443/0001-66", "centro_custo": "000011", "meses": {"2025-06": 1496.19, "2025-07": 8137.74, "2025-08": 3221.14, "2026-01": 7261.0, "2026-02": 7261.0, "2026-03": 9076.25, "2026-04": 7260.93, "2026-05": 10002.45, "2026-06": 6668.3}, "total": 60385.0, "forced_mercadoria": false}, {"codigo": "000676", "nome": "DIOGO DE OLIVEIRA CHAVES", "cnpj": "", "centro_custo": "", "meses": {"2025-11": 1200.0, "2025-12": 8000.0, "2026-01": 5000.0, "2026-02": 8200.0, "2026-03": 8910.0, "2026-04": 12100.0, "2026-05": 10280.0, "2026-06": 5000.0}, "total": 58690.0, "forced_mercadoria": false}, {"codigo": "001481", "nome": "ATRIA LUB COMERCIO DE LUBRIFICANTES S.A.", "cnpj": "06.032.022/0008-96", "centro_custo": "000011", "meses": {"2025-06": 3345.18, "2025-07": 16753.16, "2025-08": 6603.87, "2025-09": 6890.52, "2025-10": 1735.0, "2026-03": 5877.79, "2026-04": 6689.71, "2026-05": 3938.7}, "total": 51833.92999999999, "forced_mercadoria": false}, {"codigo": "001338", "nome": "DINO CESAR FRANCISCO DA SILVA", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 3526.79, "2025-08": 3610.29, "2025-09": 3557.05, "2025-10": 3531.62, "2025-11": 5480.49, "2025-12": 8954.54, "2026-01": 2378.8, "2026-02": 3452.22, "2026-03": 3820.95, "2026-04": 4120.77, "2026-05": 3890.84, "2026-06": 4066.12}, "total": 50390.47999999999, "forced_mercadoria": false}, {"codigo": "001334", "nome": "GILMAR GONÇALVES DOS SANTOS", "cnpj": "", "centro_custo": "", "meses": {"2025-06": 4039.93, "2025-07": 2313.4, "2025-08": 1848.35, "2025-09": 3090.81, "2025-10": 3021.19, "2025-11": 4752.99, "2025-12": 4328.08, "2026-01": 6439.53, "2026-02": 1806.23, "2026-03": 3081.48, "2026-04": 3876.21, "2026-05": 3422.31, "2026-06": 3827.01}, "total": 45847.52, "forced_mercadoria": false}, {"codigo": "001515", "nome": "VEDAMOTORS COMPONENTES TECNICOS LTDA", "cnpj": "85.139.558/0001-05", "centro_custo": "000011", "meses": {"2025-07": 5313.25, "2025-08": 4409.27, "2025-09": 4506.74, "2025-10": 1463.46, "2026-04": 11959.74, "2026-05": 10290.52, "2026-06": 5145.26}, "total": 43088.24, "forced_mercadoria": false}, {"codigo": "001341", "nome": "RAFAEL RIBEIRO CRUZ", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 2840.76, "2025-08": 6710.96, "2025-09": 2678.82, "2025-10": 1907.79, "2025-11": 4191.32, "2025-12": 4147.44, "2026-01": 2937.01, "2026-02": 3064.57, "2026-03": 2952.58, "2026-04": 3478.56, "2026-05": 3338.72, "2026-06": 3555.41}, "total": 41803.94, "forced_mercadoria": false}, {"codigo": "001523", "nome": "DELLAS COMERCIO E TRANSPORTES LTDA", "cnpj": "03.316.661/0005-42", "centro_custo": "000011", "meses": {"2025-07": 3112.98, "2025-08": 2231.16, "2025-09": 2240.35, "2025-10": 4873.13, "2025-11": 258.91, "2025-12": 3218.26, "2026-01": 3656.74, "2026-02": 5494.67, "2026-03": 2976.26, "2026-04": 3675.84, "2026-05": 2849.95, "2026-06": 6844.48}, "total": 41432.729999999996, "forced_mercadoria": false}, {"codigo": "001389", "nome": "WGK INDUSTRIA MECANICA LTDA - EPP", "cnpj": "71.966.352/0001-44", "centro_custo": "000011", "meses": {"2025-06": 3586.24, "2025-07": 10758.72, "2025-08": 6129.2, "2026-01": 5652.38, "2026-02": 3592.23, "2026-03": 1197.43, "2026-04": 4623.65, "2026-05": 3916.94, "2026-06": 1958.47}, "total": 41415.26, "forced_mercadoria": false}, {"codigo": "001311", "nome": "INDUSTRIA E COMERCIO DE VISEIRAS EIRELI", "cnpj": "04.521.460/0001-16", "centro_custo": "000011", "meses": {"2025-07": 5284.77, "2025-08": 2478.68, "2025-09": 4971.3, "2025-10": 7296.29, "2025-11": 1544.4, "2025-12": 1383.24, "2026-01": 2766.48, "2026-02": 2766.48, "2026-03": 2320.08, "2026-04": 4041.42, "2026-05": 2881.38, "2026-06": 3442.68}, "total": 41177.2, "forced_mercadoria": false}, {"codigo": "001342", "nome": "ANGELA MARIA VIEIRA", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 2718.51, "2025-08": 5657.47, "2025-09": 1637.86, "2025-10": 2696.41, "2025-11": 4291.09, "2025-12": 3913.74, "2026-01": 3029.49, "2026-02": 2717.66, "2026-03": 2782.5, "2026-04": 2988.33, "2026-05": 6302.86, "2026-06": 1781.6}, "total": 40517.52, "forced_mercadoria": false}, {"codigo": "001346", "nome": "GUIA FGTS", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 2655.81, "2025-08": 2742.48, "2025-09": 2755.48, "2025-10": 3752.18, "2025-11": 3790.3, "2025-12": 11446.88, "2026-01": 3819.79, "2026-02": 1851.86, "2026-03": 1759.76, "2026-04": 1940.77, "2026-05": 1850.1, "2026-06": 1979.99}, "total": 40345.399999999994, "forced_mercadoria": false}, {"codigo": "001612", "nome": "DISTRIBUIDORA MINEIRA DE FILTROS AUTOMOT", "cnpj": "26.013.236/0001-56", "centro_custo": "000011", "meses": {"2025-07": 3682.84, "2025-08": 3322.53, "2025-09": 3955.1, "2025-10": 8349.34, "2026-03": 1978.74, "2026-04": 3957.48, "2026-05": 6598.61, "2026-06": 5766.75}, "total": 37611.39, "forced_mercadoria": false}, {"codigo": "000163", "nome": "CONORTE COMERCIAL NORTE MINAS DE BATERIA", "cnpj": "17.995.549/0001-66", "centro_custo": "000011", "meses": {"2025-06": 1618.0, "2025-07": 1776.07, "2025-08": 1840.89, "2025-09": 1876.05, "2025-10": 3816.54, "2025-12": 4110.34, "2026-01": 8220.67, "2026-02": 2055.16, "2026-03": 2055.15, "2026-05": 2253.64, "2026-06": 7137.4}, "total": 36759.909999999996, "forced_mercadoria": false}, {"codigo": "001321", "nome": "CARTÃO DE CREDITO - ITAU", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 3588.61, "2025-08": 3252.86, "2025-09": 2853.88, "2025-10": 1702.31, "2025-11": 3347.9, "2025-12": 4784.07, "2026-01": 4149.78, "2026-02": 3369.56, "2026-03": 3486.52, "2026-04": 1970.68, "2026-05": 2824.36, "2026-06": 1296.62}, "total": 36627.15, "forced_mercadoria": false}, {"codigo": "000904", "nome": "MARLON BONILHA EIRELI", "cnpj": "04.200.198/0001-08", "centro_custo": "", "meses": {"2025-06": 3306.66, "2025-07": 7781.2, "2025-08": 10250.06, "2025-09": 7926.6, "2025-10": 6198.97}, "total": 35463.49, "forced_mercadoria": true}, {"codigo": "001505", "nome": "VITOR RODRIGUES DO CARMO SANTOS", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 2443.43, "2025-08": 2390.37, "2025-09": 1796.21, "2025-10": 3228.23, "2025-11": 1670.94, "2025-12": 7799.76, "2026-02": 679.13, "2026-03": 2141.35, "2026-04": 2815.36, "2026-05": 2999.5, "2026-06": 3828.34}, "total": 31792.620000000003, "forced_mercadoria": false}, {"codigo": "000033", "nome": "ANTARES MOTOS, SERVICOS E PECAS LTDA", "cnpj": "12.584.709/0001-60", "centro_custo": "000011", "meses": {"2025-06": 2709.43, "2025-07": 2913.18, "2025-08": 1590.57, "2025-09": 2064.03, "2025-10": 5674.51, "2025-12": 3641.85, "2026-01": 1766.08, "2026-02": 1151.04, "2026-03": 2143.82, "2026-04": 2955.89, "2026-05": 1128.52, "2026-06": 3005.49}, "total": 30744.410000000003, "forced_mercadoria": false}, {"codigo": "001323", "nome": "PROTERCAPAS LTDA", "cnpj": "04.001.306/0001-13", "centro_custo": "", "meses": {"2025-07": 6221.52, "2025-08": 3676.49, "2025-09": 3671.87, "2026-01": 6774.48, "2026-02": 10161.72}, "total": 30506.08, "forced_mercadoria": true}, {"codigo": "001343", "nome": "GRACIELLE CRISTINA MENDES VIEIRA", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 2161.4, "2025-08": 2180.18, "2025-09": 5010.79, "2025-10": 1521.66, "2025-11": 2627.58, "2025-12": 3103.14, "2026-01": 2179.31, "2026-02": 2173.32, "2026-03": 2228.14, "2026-04": 2464.16, "2026-05": 2329.37, "2026-06": 2322.99}, "total": 30302.04, "forced_mercadoria": false}, {"codigo": "001575", "nome": "COMPANHIA BRASILEIRA DE DISTRIBUICAO AUT", "cnpj": "42.580.092/0012-29", "centro_custo": "000011", "meses": {"2025-07": 532.06, "2025-08": 2276.1, "2025-09": 2160.89, "2025-10": 1941.11, "2025-11": 774.14, "2025-12": 967.04, "2026-01": 1934.0, "2026-02": 2394.7, "2026-03": 921.4, "2026-04": 3939.21, "2026-05": 5658.75, "2026-06": 6274.34}, "total": 29773.74, "forced_mercadoria": false}, {"codigo": "001605", "nome": "JHONATA WILLIAM FERREIRA SILVA", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 1870.09, "2025-08": 1860.26, "2025-09": 1935.83, "2025-10": 1829.17, "2025-11": 3035.24, "2025-12": 2736.84, "2026-01": 2008.26, "2026-02": 2107.03, "2026-03": 1984.94, "2026-04": 2058.7, "2026-05": 2341.42, "2026-06": 2772.75}, "total": 26540.53, "forced_mercadoria": false}, {"codigo": "001332", "nome": "KAIO RODRIGUES DOS SANTOS", "cnpj": "", "centro_custo": "", "meses": {"2025-08": 2197.82, "2025-09": 2197.82, "2025-10": 2197.82, "2025-11": 2698.0, "2025-12": 2698.0, "2026-01": 2198.0, "2026-02": 2448.0, "2026-03": 2198.0, "2026-04": 2352.0, "2026-05": 2352.0, "2026-06": 2352.0}, "total": 25889.46, "forced_mercadoria": false}, {"codigo": "001518", "nome": "SOARES NASCIMENTO CONTABILIDADE", "cnpj": "04.735.970/0001-96", "centro_custo": "000023", "meses": {"2025-07": 1644.5, "2025-08": 1644.5, "2025-09": 1644.5, "2025-10": 1644.5, "2025-11": 1644.5, "2025-12": 1644.5, "2026-01": 1644.5, "2026-02": 2634.12, "2026-03": 2634.12, "2026-04": 1756.08, "2026-05": 3512.16, "2026-06": 2734.12}, "total": 24782.1, "forced_mercadoria": false}, {"codigo": "001578", "nome": "SPORTSCO COMERCIO DE ARTIGOS ESPORTIVOS", "cnpj": "05.982.990/0002-05", "centro_custo": "", "meses": {"2025-06": 1748.11, "2025-07": 6992.44, "2025-08": 5268.34, "2025-09": 5350.66, "2025-10": 5354.01}, "total": 24713.559999999998, "forced_mercadoria": true}, {"codigo": "001625", "nome": "TOTALMAX MATRIZ", "cnpj": "03.585.187/0001-20", "centro_custo": "", "meses": {"2025-06": 3447.73, "2025-07": 10314.3, "2025-08": 7048.12, "2025-09": 3534.35}, "total": 24344.499999999996, "forced_mercadoria": true}, {"codigo": "001647", "nome": "VITOR SIMOES", "cnpj": "", "centro_custo": "", "meses": {"2026-02": 4863.0, "2026-03": 9513.0, "2026-05": 9733.0}, "total": 24109.0, "forced_mercadoria": false}, {"codigo": "001537", "nome": "GUIA - DÉBITOS FEDERAIS (RFB)", "cnpj": "", "centro_custo": "", "meses": {"2025-06": 959.5, "2025-07": 968.04, "2025-08": 977.98, "2025-10": 7364.96, "2025-11": 7436.43, "2025-12": 1014.54, "2026-01": 1024.01, "2026-02": 2066.04, "2026-03": 1040.78, "2026-04": 1050.27}, "total": 23902.55, "forced_mercadoria": false}, {"codigo": "001295", "nome": "STARPLAST INDUSTRIA E COMERCIO LTDA", "cnpj": "54.649.470/0001-00", "centro_custo": "", "meses": {"2025-08": 5879.1, "2025-09": 5957.1, "2025-10": 11923.51}, "total": 23759.71, "forced_mercadoria": true}, {"codigo": "001577", "nome": "WALTER GOMES DA COSTA JUNIOR", "cnpj": "", "centro_custo": "", "meses": {"2025-06": 500.0, "2025-07": 1084.0, "2025-08": 2500.0, "2025-09": 1958.0, "2025-10": 1885.0, "2025-11": 2252.0, "2025-12": 1667.0, "2026-01": 2396.0, "2026-02": 1792.0, "2026-03": 1916.0, "2026-04": 1792.0, "2026-05": 2334.0, "2026-06": 1292.0}, "total": 23368.0, "forced_mercadoria": false}, {"codigo": "001294", "nome": "PANTANEIRO IND. E COM. DE CAPAS EIRELI", "cnpj": "07.420.173/0001-08", "centro_custo": "000011", "meses": {"2026-01": 7686.42, "2026-02": 10248.56, "2026-03": 5124.29}, "total": 23059.27, "forced_mercadoria": false}, {"codigo": "001604", "nome": "MARLENE DE FATIMA DE JESUS", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 1919.27, "2025-08": 1938.05, "2025-09": 1944.28, "2025-10": 1389.58, "2025-11": 2248.68, "2025-12": 2106.11, "2026-01": 1403.64, "2026-02": 1931.48, "2026-03": 1973.49, "2026-04": 2088.55, "2026-05": 1988.01, "2026-06": 1981.63}, "total": 22912.769999999997, "forced_mercadoria": false}, {"codigo": "001558", "nome": "IAGO NUNES SOUZA", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 1436.79, "2025-08": 1509.35, "2025-09": 1491.94, "2025-10": 1275.32, "2025-11": 2456.99, "2025-12": 2029.71, "2026-01": 1296.7, "2026-02": 2643.39, "2026-03": 1136.07, "2026-04": 2195.36, "2026-05": 1983.31, "2026-06": 2546.56}, "total": 22001.49, "forced_mercadoria": false}, {"codigo": "001547", "nome": "ERBS ENERGIA", "cnpj": "17.645.625/0046-05", "centro_custo": "", "meses": {"2025-06": 2980.9, "2025-07": 8942.64, "2025-08": 6035.29, "2025-09": 3598.34}, "total": 21557.17, "forced_mercadoria": true}, {"codigo": "001504", "nome": "MEGATRON IND. E COM. ATACAD.DE PECAS P/M", "cnpj": "00.714.552/0001-61", "centro_custo": "", "meses": {"2025-12": 2098.52, "2026-01": 5180.47, "2026-02": 9245.87, "2026-03": 3081.96}, "total": 19606.82, "forced_mercadoria": true}, {"codigo": "001541", "nome": "GUIA INSS", "cnpj": "", "centro_custo": "", "meses": {"2025-12": 2619.52, "2026-01": 2899.9, "2026-02": 4380.59, "2026-03": 2123.94, "2026-04": 2448.77, "2026-05": 2322.26, "2026-06": 2500.75}, "total": 19295.730000000003, "forced_mercadoria": false}, {"codigo": "001661", "nome": "MOTOPARTS INDUSTRIA E COMERCIO DE BATERI", "cnpj": "48.080.806/0001-63", "centro_custo": "", "meses": {"2026-03": 6282.61, "2026-04": 12565.22}, "total": 18847.829999999998, "forced_mercadoria": true}, {"codigo": "000700", "nome": "TAURUS HELMETS IND DE CAPACETES LTDA", "cnpj": "04.290.323/0001-18", "centro_custo": "", "meses": {"2025-06": 1203.49, "2025-07": 5311.17, "2025-08": 3078.46, "2025-09": 1607.73, "2025-10": 4605.38, "2025-11": 2268.66}, "total": 18074.89, "forced_mercadoria": false}, {"codigo": "000880", "nome": "IMS RACING COMERCIAL E DIST LTDA", "cnpj": "10.869.908/0001-90", "centro_custo": "000011", "meses": {"2025-06": 1938.7, "2025-07": 2132.21, "2025-08": 1916.59, "2025-09": 2353.91, "2025-10": 3845.7, "2025-12": 2038.41, "2026-01": 558.48, "2026-02": 558.48, "2026-03": 558.49, "2026-05": 1984.05}, "total": 17885.02, "forced_mercadoria": false}, {"codigo": "001319", "nome": "HL DISTRIBUICAO MOTO BIKE LTDA", "cnpj": "37.950.696/0002-08", "centro_custo": "000011", "meses": {"2026-01": 3350.16, "2026-02": 5646.9, "2026-03": 3971.82, "2026-04": 2296.74, "2026-05": 1145.94}, "total": 16411.559999999998, "forced_mercadoria": false}, {"codigo": "001509", "nome": "GUIA NACIONAL DE RECOLHIMENTO DE TRIBUTO", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 359.36, "2025-11": 182.3, "2026-02": 227.43, "2026-03": 15095.58, "2026-06": 463.38}, "total": 16328.05, "forced_mercadoria": false}, {"codigo": "001097", "nome": "GALLO DE OURO MOTOPARTS", "cnpj": "29.466.677/0001-00", "centro_custo": "000011", "meses": {"2025-09": 1851.92, "2025-10": 2022.78, "2025-11": 9351.76, "2025-12": 1957.2}, "total": 15183.66, "forced_mercadoria": true}, {"codigo": "001574", "nome": "MCA IMPORTAÇÃO E EXPORTAÇÃO LTDA-EPP", "cnpj": "08.323.143/0001-46", "centro_custo": "", "meses": {"2025-07": 3781.7, "2025-08": 1898.41, "2025-09": 3842.18, "2025-10": 3853.33}, "total": 13375.619999999999, "forced_mercadoria": true}, {"codigo": "001307", "nome": "GUIA INSS / IRRF - FOLHA DE PAGAMENTO", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 2570.1, "2025-08": 2682.28, "2025-09": 2698.73, "2025-10": 2701.73, "2025-11": 2687.87}, "total": 13340.71, "forced_mercadoria": false}, {"codigo": "001364", "nome": "FW3 CAPACETES LTDA", "cnpj": "27.341.159/0001-26", "centro_custo": "", "meses": {"2025-06": 4026.87, "2025-07": 8053.74}, "total": 12080.61, "forced_mercadoria": true}, {"codigo": "001656", "nome": "BOOMERANG MOTO PECAS", "cnpj": "10.350.477/0001-50", "centro_custo": "", "meses": {"2026-04": 3979.47, "2026-05": 7964.72}, "total": 11944.19, "forced_mercadoria": true}, {"codigo": "001634", "nome": "ALZILAN", "cnpj": "29.142.181/0001-72", "centro_custo": "", "meses": {"2025-10": 2671.88, "2025-11": 4522.3, "2025-12": 4522.3}, "total": 11716.48, "forced_mercadoria": true}, {"codigo": "001635", "nome": "SEVEN MOTOPECAS DIGITAL IPATINGA", "cnpj": "61.222.432/0001-31", "centro_custo": "000011", "meses": {"2025-11": 2000.2, "2025-12": 1999.6, "2026-01": 1999.6, "2026-03": 1874.63, "2026-04": 1874.63, "2026-05": 1875.19}, "total": 11623.85, "forced_mercadoria": false}, {"codigo": "001296", "nome": "STARPLAST DA BAHIA INDUSTRIA E COMERCIO", "cnpj": "07.034.569/0001-17", "centro_custo": "", "meses": {"2025-08": 3822.79, "2025-09": 1947.85, "2025-10": 3867.17, "2025-11": 1903.25}, "total": 11541.06, "forced_mercadoria": true}, {"codigo": "001439", "nome": "DANIDREA INDUSTRIA E COMERCIO LTDA", "cnpj": "59.552.224/0001-59", "centro_custo": "", "meses": {"2025-12": 6379.72, "2026-01": 3421.42, "2026-02": 1710.71}, "total": 11511.849999999999, "forced_mercadoria": true}, {"codigo": "001663", "nome": "PLASVAL INDUSTRIA E COMERCIO DE MOTOPECA", "cnpj": "63.161.964/0001-31", "centro_custo": "", "meses": {"2026-04": 5176.86, "2026-05": 3165.36, "2026-06": 3165.36}, "total": 11507.58, "forced_mercadoria": true}, {"codigo": "001473", "nome": "A. L. B. MOTO PECAS LTDA", "cnpj": "26.622.983/0001-91", "centro_custo": "", "meses": {"2025-07": 2180.24, "2025-08": 4100.92, "2025-09": 4978.14}, "total": 11259.3, "forced_mercadoria": true}, {"codigo": "001324", "nome": "IRPJ E CSLL", "cnpj": "", "centro_custo": "", "meses": {"2026-03": 1236.68, "2026-04": 9700.96}, "total": 10937.64, "forced_mercadoria": false}, {"codigo": "001623", "nome": "J.B. BRASIL INDUSTRIA E COMERCIO DE MOTO", "cnpj": "23.183.790/0001-93", "centro_custo": "", "meses": {"2025-06": 2891.68, "2025-07": 5783.36, "2026-06": 1897.49}, "total": 10572.529999999999, "forced_mercadoria": false}, {"codigo": "001621", "nome": "M3 SOFTWARE SISTEMAS", "cnpj": "23.920.274/0001-02", "centro_custo": "000019", "meses": {"2025-07": 800.0, "2025-08": 800.0, "2025-09": 800.0, "2025-10": 800.0, "2025-11": 800.0, "2025-12": 800.0, "2026-01": 1600.0, "2026-02": 800.0, "2026-03": 800.0, "2026-04": 856.0, "2026-05": 856.0, "2026-06": 856.0}, "total": 10568.0, "forced_mercadoria": false}, {"codigo": "001552", "nome": "LBS COMERCIAL LTDA", "cnpj": "44.543.152/0001-06", "centro_custo": "", "meses": {"2025-06": 2453.67, "2025-07": 2374.37, "2025-12": 3816.51, "2026-01": 1272.17}, "total": 9916.72, "forced_mercadoria": true}, {"codigo": "000825", "nome": "CEMIG DISTRIBUICAO S/A (MC MOTO) Nº 430", "cnpj": "06.981.180/0001-16", "centro_custo": "", "meses": {"2025-06": 881.27, "2025-07": 802.94, "2025-08": 871.81, "2025-09": 900.88, "2025-10": 963.66, "2025-11": 800.58, "2025-12": 893.1, "2026-01": 719.12, "2026-02": 711.89, "2026-03": 740.03, "2026-04": 676.97, "2026-05": 742.93}, "total": 9705.18, "forced_mercadoria": false}, {"codigo": "001644", "nome": "FACIL MULTILUB LTDA", "cnpj": "51.159.571/0001-04", "centro_custo": "000011", "meses": {"2026-02": 3174.4, "2026-03": 1587.2, "2026-04": 1545.33, "2026-05": 3090.67}, "total": 9397.6, "forced_mercadoria": false}, {"codigo": "001631", "nome": "PARAMOTOS INDUSTRIA, COMERCIO, IMPORTACA", "cnpj": "22.460.760/0001-14", "centro_custo": "", "meses": {"2025-06": 1306.92, "2025-07": 3920.76, "2025-08": 2657.42, "2025-09": 1353.97}, "total": 9239.07, "forced_mercadoria": true}, {"codigo": "001479", "nome": "FUNDIPECAS MOTOPECAS EIRELI - EPP", "cnpj": "35.865.726/0001-71", "centro_custo": "", "meses": {"2025-06": 2169.53, "2025-07": 3329.16, "2025-08": 1978.17, "2025-09": 1400.92}, "total": 8877.78, "forced_mercadoria": true}, {"codigo": "001528", "nome": "DECMINAS DISTRIBUICAO E LOGISTICA S.A.", "cnpj": "07.399.636/0028-17", "centro_custo": "000011", "meses": {"2025-08": 2922.48, "2025-11": 1415.4, "2025-12": 707.7, "2026-01": 1122.87, "2026-02": 2245.73, "2026-06": 457.8}, "total": 8871.98, "forced_mercadoria": false}, {"codigo": "001300", "nome": "MERCOLUB LUBRIFICANTES LTDA", "cnpj": "07.468.230/0001-29", "centro_custo": "", "meses": {"2025-07": 3502.6, "2025-10": 1157.25, "2025-11": 2314.5, "2025-12": 1157.25}, "total": 8131.6, "forced_mercadoria": true}, {"codigo": "000471", "nome": "METALURGICA DDL LTDA", "cnpj": "60.775.020/0001-66", "centro_custo": "", "meses": {"2025-07": 4874.58, "2025-08": 2526.22}, "total": 7400.799999999999, "forced_mercadoria": true}, {"codigo": "001270", "nome": "THIAGO PATRICK SILVA FREITAS 09779543660", "cnpj": "27.040.999/0001-59", "centro_custo": "000021", "meses": {"2025-07": 450.0, "2025-08": 800.0, "2025-09": 450.0, "2025-10": 450.0, "2025-11": 450.0, "2025-12": 400.0, "2026-01": 850.0, "2026-02": 850.0, "2026-03": 850.0, "2026-04": 450.0, "2026-05": 800.0, "2026-06": 545.0}, "total": 7345.0, "forced_mercadoria": false}, {"codigo": "001279", "nome": "VIRTUS TRADING COMERCIO EXTERIOR", "cnpj": "00.453.166/0001-63", "centro_custo": "", "meses": {"2025-06": 724.87, "2025-07": 2761.65, "2025-08": 1933.25, "2025-09": 966.61, "2025-11": 785.35}, "total": 7171.7300000000005, "forced_mercadoria": true}, {"codigo": "001511", "nome": "CICLO CAIRU LTDA IMPORTADORA", "cnpj": "02.513.526/0002-81", "centro_custo": "", "meses": {"2025-08": 1683.33, "2025-09": 1738.57, "2025-10": 1732.0, "2025-11": 1641.57}, "total": 6795.469999999999, "forced_mercadoria": true}, {"codigo": "001651", "nome": "ECOPARTS DISTRIBUIDORA DE AUTOPECAS LTDA", "cnpj": "11.812.174/0007-60", "centro_custo": "", "meses": {"2026-03": 2095.87, "2026-04": 4192.37}, "total": 6288.24, "forced_mercadoria": true}, {"codigo": "001542", "nome": "GUIA DE RECOLHIMENTO RECOMPOSIÇÃO DE ALÍ", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 644.5, "2025-08": 1831.38, "2025-09": 2309.42, "2025-10": 295.98, "2025-11": 368.8, "2026-02": 692.03}, "total": 6142.110000000001, "forced_mercadoria": false}, {"codigo": "001536", "nome": "GUIA - DÉBITOS FEDERAIS/PREVIDENCIÁRIOS", "cnpj": "", "centro_custo": "", "meses": {"2025-06": 6139.71}, "total": 6139.71, "forced_mercadoria": false}, {"codigo": "001626", "nome": "BEL DISTRIBUIDOR DE LUBRIFICANTES LTDA", "cnpj": "07.580.204/0005-11", "centro_custo": "", "meses": {"2025-07": 1843.52, "2025-08": 2656.43, "2025-09": 890.4}, "total": 5390.349999999999, "forced_mercadoria": true}, {"codigo": "001390", "nome": "SINDCOMERCIARIOS - PLANO DE SAUDE", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 450.0, "2025-08": 450.0, "2025-09": 460.8, "2025-10": 450.0, "2025-11": 450.0, "2025-12": 450.0, "2026-01": 450.0, "2026-02": 450.0, "2026-03": 513.0, "2026-04": 513.0, "2026-05": 513.0}, "total": 5149.8, "forced_mercadoria": false}, {"codigo": "001648", "nome": "DARF - PIS/COFINS", "cnpj": "", "centro_custo": "", "meses": {"2026-02": 5029.56, "2026-05": 60.65}, "total": 5090.21, "forced_mercadoria": false}, {"codigo": "001303", "nome": "LEIDIANE MOREIRA DE SOUSA 15942399670", "cnpj": "38.176.920/0001-38", "centro_custo": "", "meses": {"2025-06": 1596.2, "2025-07": 621.5, "2025-08": 510.5, "2026-01": 517.5, "2026-02": 1030.0, "2026-03": 512.5}, "total": 4788.2, "forced_mercadoria": true}, {"codigo": "000243", "nome": "CEMIG DISTRIBUICAO S/A (BOUTIQUE) Nº 410", "cnpj": "", "centro_custo": "", "meses": {"2025-06": 372.9, "2025-07": 340.96, "2025-08": 361.62, "2025-09": 405.49, "2025-10": 439.97, "2025-11": 364.7, "2025-12": 421.5, "2026-01": 372.29, "2026-02": 335.41, "2026-03": 371.45, "2026-04": 329.79, "2026-05": 334.93}, "total": 4451.01, "forced_mercadoria": false}, {"codigo": "001529", "nome": "SIMPLES NACIONAL - GUIA", "cnpj": "", "centro_custo": "", "meses": {"2026-03": 4405.85}, "total": 4405.85, "forced_mercadoria": false}, {"codigo": "001478", "nome": "RATEC - REGO AMARAL TECNOLOGIA E COMERCI", "cnpj": "37.717.227/0001-62", "centro_custo": "000031", "meses": {"2025-06": 150.0, "2025-07": 150.0, "2025-08": 300.0, "2025-09": 300.0, "2025-10": 600.0, "2025-11": 200.0, "2025-12": 200.0, "2026-01": 200.0, "2026-02": 400.0, "2026-03": 300.0, "2026-04": 650.0, "2026-05": 700.0, "2026-06": 200.0}, "total": 4350.0, "forced_mercadoria": false}, {"codigo": "001632", "nome": "MIX MOTOS", "cnpj": "50.586.706/0001-55", "centro_custo": "", "meses": {"2025-09": 79.0, "2025-10": 702.0, "2025-12": 1290.0, "2026-01": 626.8, "2026-05": 1569.0}, "total": 4266.8, "forced_mercadoria": true}, {"codigo": "001637", "nome": "PIRACAPAS", "cnpj": "38.968.186/0001-40", "centro_custo": "", "meses": {"2025-12": 961.73, "2026-01": 961.73, "2026-02": 2274.86}, "total": 4198.32, "forced_mercadoria": true}, {"codigo": "001457", "nome": "W VALADARES COMERCIO DE PECAS E ACESSORI", "cnpj": "43.195.897/0001-69", "centro_custo": "000011", "meses": {"2025-08": 529.56, "2025-10": 1064.19, "2025-11": 512.55, "2026-01": 713.7, "2026-02": 713.7, "2026-05": 430.26}, "total": 3963.96, "forced_mercadoria": false}, {"codigo": "001627", "nome": "FAPE", "cnpj": "41.911.579/0001-21", "centro_custo": "", "meses": {"2025-07": 3627.23}, "total": 3627.23, "forced_mercadoria": true}, {"codigo": "001599", "nome": "PADARIA", "cnpj": "", "centro_custo": "", "meses": {"2025-09": 507.0, "2025-10": 483.0, "2025-11": 216.5, "2025-12": 71.0, "2026-02": 18.0, "2026-03": 777.0, "2026-04": 616.0, "2026-05": 516.0, "2026-06": 422.5}, "total": 3627.0, "forced_mercadoria": false}, {"codigo": "001453", "nome": "DUNAX LUBRIFICANTES LTDA MG VAREJO", "cnpj": "05.092.901/0020-37", "centro_custo": "", "meses": {"2025-10": 205.63, "2025-11": 411.25, "2026-04": 1180.42, "2026-05": 597.07, "2026-06": 1194.13}, "total": 3588.5000000000005, "forced_mercadoria": true}, {"codigo": "001530", "nome": "QUALITY & WINNER MOTORS IMPORTACAO E EXP", "cnpj": "04.697.725/0002-12", "centro_custo": "", "meses": {"2025-07": 1741.35, "2025-08": 1777.91}, "total": 3519.26, "forced_mercadoria": true}, {"codigo": "001657", "nome": "HIPERCG COMERCIO E IMPORTACAO DE PECAS L", "cnpj": "02.125.218/0008-74", "centro_custo": "000011", "meses": {"2026-04": 699.8, "2026-05": 1399.6, "2026-06": 1399.6}, "total": 3498.9999999999995, "forced_mercadoria": false}, {"codigo": "001589", "nome": "PERIMETRAL COMERCIO DE ACESSORIOS PARA M", "cnpj": "08.390.881/0003-78", "centro_custo": "", "meses": {"2026-04": 877.28, "2026-05": 873.0, "2026-06": 1746.0}, "total": 3496.2799999999997, "forced_mercadoria": true}, {"codigo": "001519", "nome": "PREMIER ATACADISTA DE IPATINGA LTDA", "cnpj": "13.188.654/0001-32", "centro_custo": "", "meses": {"2025-07": 2605.87, "2025-08": 555.63}, "total": 3161.5, "forced_mercadoria": true}, {"codigo": "001278", "nome": "GOMINHA PNEUS LTDA", "cnpj": "41.827.544/0004-51", "centro_custo": "", "meses": {"2025-06": 1050.75, "2025-07": 2101.45}, "total": 3152.2, "forced_mercadoria": true}, {"codigo": "001359", "nome": "SEGURO ITAU EMPRESAS", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 273.74, "2025-08": 273.74, "2025-09": 273.74, "2025-11": 273.74, "2025-12": 273.74, "2026-01": 273.74, "2026-02": 273.74, "2026-04": 822.72, "2026-06": 411.36}, "total": 3150.26, "forced_mercadoria": false}, {"codigo": "001318", "nome": "TABOO INDUSTRIA E COMERCIO LTDA ME", "cnpj": "71.421.770/0001-56", "centro_custo": "", "meses": {"2026-06": 3099.9}, "total": 3099.9, "forced_mercadoria": false}, {"codigo": "001670", "nome": "CARTAO LOJA", "cnpj": "", "centro_custo": "", "meses": {"2026-05": 3095.0}, "total": 3095.0, "forced_mercadoria": false}, {"codigo": "000860", "nome": "G.A.G VALADARES CONFECCOES LTDA EPP", "cnpj": "13.758.355/0001-96", "centro_custo": "", "meses": {"2025-06": 857.82, "2025-08": 406.82, "2025-10": 413.32, "2026-05": 1386.12}, "total": 3064.08, "forced_mercadoria": true}, {"codigo": "001517", "nome": "EMBALAMONTES COMERCIO DE EMBALAGENS EIRE", "cnpj": "09.397.478/0001-71", "centro_custo": "", "meses": {"2025-08": 604.0, "2025-10": 495.0, "2025-12": 594.0, "2026-03": 716.0, "2026-06": 627.5}, "total": 3036.5, "forced_mercadoria": false}, {"codigo": "001668", "nome": "VILLELA BRASIL CONSULTORIA EM GESTAO EMP", "cnpj": "31.655.393/0001-03", "centro_custo": "", "meses": {"2026-05": 1500.0, "2026-06": 1500.0}, "total": 3000.0, "forced_mercadoria": false}, {"codigo": "001659", "nome": "VILLELA INSTITUICAO DE PAGAMENTO S/A.", "cnpj": "33.423.888/0001-24", "centro_custo": "", "meses": {"2026-03": 559.58, "2026-04": 2417.42}, "total": 2977.0, "forced_mercadoria": false}, {"codigo": "001153", "nome": "RAMETTA & SOARES LTDA", "cnpj": "04.785.029/0001-87", "centro_custo": "", "meses": {"2025-07": 1055.0, "2025-11": 1145.0, "2026-02": 256.0, "2026-06": 390.0}, "total": 2846.0, "forced_mercadoria": false}, {"codigo": "001314", "nome": "MOTO CIDADE PECAS PARA MOTOS LTDA - ME", "cnpj": "24.022.121/0001-00", "centro_custo": "", "meses": {"2025-08": 438.5, "2025-11": 415.7, "2026-02": 762.0, "2026-03": 487.0, "2026-04": 613.85, "2026-06": 98.5}, "total": 2815.5499999999997, "forced_mercadoria": true}, {"codigo": "001564", "nome": "COMPANHIA BRASILEIRA DE DISTRIBUICAO AUT", "cnpj": "42.580.092/0048-30", "centro_custo": "", "meses": {"2025-06": 449.47, "2025-07": 1913.81, "2025-08": 449.47}, "total": 2812.75, "forced_mercadoria": false}, {"codigo": "001629", "nome": "SPORTSCO", "cnpj": "05.982.990/0001-24", "centro_custo": "", "meses": {"2025-07": 1074.3, "2025-08": 1077.45, "2025-09": 547.64}, "total": 2699.39, "forced_mercadoria": true}, {"codigo": "001658", "nome": "FERRAGENS ALI - ACO", "cnpj": "45.900.596/0001-14", "centro_custo": "", "meses": {"2026-03": 2600.0}, "total": 2600.0, "forced_mercadoria": false}, {"codigo": "001662", "nome": "JENILSON SILVA JESUS", "cnpj": "", "centro_custo": "", "meses": {"2026-03": 2600.0}, "total": 2600.0, "forced_mercadoria": false}, {"codigo": "001467", "nome": "PLIM TELECOMUNICACOES LTDA", "cnpj": "09.140.755/0001-66", "centro_custo": "", "meses": {"2025-06": 210.0, "2025-07": 210.0, "2025-08": 210.0, "2025-09": 210.0, "2025-10": 210.0, "2025-11": 210.0, "2025-12": 210.0, "2026-01": 210.0, "2026-02": 210.0, "2026-03": 210.0, "2026-04": 210.0, "2026-05": 210.0}, "total": 2520.0, "forced_mercadoria": false}, {"codigo": "001666", "nome": "CARTAO CREDITO - MC/AUTOFIX", "cnpj": "", "centro_custo": "", "meses": {"2026-04": 2491.0}, "total": 2491.0, "forced_mercadoria": false}, {"codigo": "001586", "nome": "EXPRESSO TRANSMONTES LTDA", "cnpj": "48.893.539/0001-43", "centro_custo": "", "meses": {"2025-07": 420.95, "2025-10": 146.62, "2026-01": 1734.65}, "total": 2302.2200000000003, "forced_mercadoria": false}, {"codigo": "000548", "nome": "PATRULHA ELETRONICA E  PROTEMAX", "cnpj": "01.002.725/0001-81", "centro_custo": "000029", "meses": {"2025-07": 185.42, "2025-08": 185.42, "2025-09": 189.75, "2025-10": 185.42, "2025-11": 185.42, "2025-12": 370.88, "2026-02": 185.44, "2026-03": 185.44, "2026-04": 185.42, "2026-05": 185.4, "2026-06": 204.18}, "total": 2248.19, "forced_mercadoria": false}, {"codigo": "001642", "nome": "AIRBNB PLATAFORMA DIGITAL LTDA", "cnpj": "36.297.602/0001-08", "centro_custo": "", "meses": {"2026-01": 895.0, "2026-03": 777.0, "2026-04": 570.0}, "total": 2242.0, "forced_mercadoria": false}, {"codigo": "001652", "nome": "ITAU SEGURO VIDA GLOB ", "cnpj": "", "centro_custo": "", "meses": {"2026-03": 553.71, "2026-04": 553.7, "2026-05": 553.7, "2026-06": 553.7}, "total": 2214.8100000000004, "forced_mercadoria": false}, {"codigo": "001474", "nome": "TELEREDE TELECOMUNICAÇOES COMERCIAIS LTD", "cnpj": "07.455.988/0001-22", "centro_custo": "000024", "meses": {"2025-06": 180.0, "2025-07": 180.0, "2025-08": 180.0, "2025-09": 180.0, "2025-10": 180.0, "2025-11": 180.0, "2025-12": 180.0, "2026-01": 180.0, "2026-02": 180.0, "2026-03": 180.0, "2026-04": 180.0, "2026-05": 180.0}, "total": 2160.0, "forced_mercadoria": false}, {"codigo": "001580", "nome": "M.G ATACADISTA DE PECAS E ACESSORIOS AUT", "cnpj": "31.138.108/0001-79", "centro_custo": "000011", "meses": {"2025-12": 2091.6}, "total": 2091.6, "forced_mercadoria": false}, {"codigo": "001671", "nome": "GRAFICA QUALITY", "cnpj": "46.230.634/0001-31", "centro_custo": "", "meses": {"2026-05": 2020.0}, "total": 2020.0, "forced_mercadoria": true}, {"codigo": "001286", "nome": "ETAM COMERCIO DE PECAS IMPORTACAO E SERV", "cnpj": "08.898.737/0001-85", "centro_custo": "", "meses": {"2025-12": 671.7, "2026-01": 671.7, "2026-02": 671.9}, "total": 2015.3000000000002, "forced_mercadoria": false}, {"codigo": "001608", "nome": "GUIA INSS/DARF", "cnpj": "", "centro_custo": "", "meses": {"2025-12": 1931.3}, "total": 1931.3, "forced_mercadoria": false}, {"codigo": "001355", "nome": "ANTARES MOTOS - SANTO EXPEDITO", "cnpj": "12.584.709/0005-94", "centro_custo": "000011", "meses": {"2025-06": 464.47, "2025-07": 464.46, "2025-08": 336.88, "2025-10": 68.25, "2025-12": 110.86, "2026-01": 110.86, "2026-02": 110.85, "2026-04": 261.92}, "total": 1928.5499999999997, "forced_mercadoria": false}, {"codigo": "000944", "nome": "RAPIDO MONTES CLAROS TRANSPORTES LTDA", "cnpj": "10.382.132/0001-89", "centro_custo": "000027", "meses": {"2026-03": 171.14, "2026-04": 964.0, "2026-05": 212.82, "2026-06": 507.57}, "total": 1855.5299999999997, "forced_mercadoria": false}, {"codigo": "000905", "nome": "MASTER INTERNET CONTRATO: 485571", "cnpj": "", "centro_custo": "000016", "meses": {"2025-07": 142.24, "2025-08": 142.24, "2025-09": 145.17, "2025-10": 145.19, "2025-11": 142.24, "2025-12": 142.24, "2026-01": 142.24, "2026-02": 142.24, "2026-03": 142.24, "2026-04": 150.48, "2026-05": 150.48, "2026-06": 150.48}, "total": 1737.48, "forced_mercadoria": false}, {"codigo": "001673", "nome": "CONSORCIO SICOOB", "cnpj": "", "centro_custo": "", "meses": {"2026-06": 1669.6}, "total": 1669.6, "forced_mercadoria": false}, {"codigo": "001573", "nome": "LBS COMERCIAL ( FORCE TEK )", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 79.3, "2025-11": 1328.94, "2025-12": 227.07}, "total": 1635.31, "forced_mercadoria": true}, {"codigo": "001440", "nome": "FELIPE A. DE SOUZA", "cnpj": "12.447.395/0003-16", "centro_custo": "", "meses": {"2025-08": 666.0, "2025-09": 49.0, "2025-10": 476.0, "2025-11": 414.5}, "total": 1605.5, "forced_mercadoria": false}, {"codigo": "001112", "nome": "58.417.716 RAFAEL SOARES DIAS", "cnpj": "58.417.716/0001-79", "centro_custo": "", "meses": {"2025-08": 1525.0}, "total": 1525.0, "forced_mercadoria": false}, {"codigo": "001646", "nome": "JOSE MAURICIO (LM)", "cnpj": "", "centro_custo": "", "meses": {"2026-02": 1000.0, "2026-04": 500.0}, "total": 1500.0, "forced_mercadoria": false}, {"codigo": "001356", "nome": "BRUDOVAN PNEUS LTDA - BH", "cnpj": "55.831.184/0004-76", "centro_custo": "", "meses": {"2026-05": 729.81, "2026-06": 729.59}, "total": 1459.4, "forced_mercadoria": false}, {"codigo": "001649", "nome": "MIX MOTO PECAS", "cnpj": "62.245.143/0001-10", "centro_custo": "", "meses": {"2026-02": 398.0, "2026-03": 875.0}, "total": 1273.0, "forced_mercadoria": false}, {"codigo": "000937", "nome": "PREFEITURA DE MONTES CLAROS - TFLF-ALVAR", "cnpj": "", "centro_custo": "", "meses": {"2026-03": 1239.26}, "total": 1239.26, "forced_mercadoria": false}, {"codigo": "001665", "nome": "ESTACIONAMENTO LOJA", "cnpj": "", "centro_custo": "", "meses": {"2026-04": 400.0, "2026-05": 400.0, "2026-06": 400.0}, "total": 1200.0, "forced_mercadoria": false}, {"codigo": "001271", "nome": "F7 BRETAS DISTRIBUIDORA LTDA.", "cnpj": "10.597.095/0001-26", "centro_custo": "", "meses": {"2025-08": 368.01, "2025-10": 749.96}, "total": 1117.97, "forced_mercadoria": false}, {"codigo": "001507", "nome": "DANIEL FERNADES ROCHA", "cnpj": "", "centro_custo": "", "meses": {"2026-06": 1106.1}, "total": 1106.1, "forced_mercadoria": false}, {"codigo": "000834", "nome": "COPASA - MC BOUTIQUE N°410", "cnpj": "", "centro_custo": "", "meses": {"2025-06": 81.61, "2025-07": 72.51, "2025-08": 72.63, "2025-09": 81.39, "2025-11": 90.15, "2025-12": 213.54, "2026-01": 90.15, "2026-02": 101.98, "2026-03": 93.13, "2026-05": 186.26}, "total": 1083.35, "forced_mercadoria": false}, {"codigo": "001618", "nome": "SAPINHO", "cnpj": "", "centro_custo": "", "meses": {"2026-04": 1035.0}, "total": 1035.0, "forced_mercadoria": false}, {"codigo": "001534", "nome": "GUIA -  PGFN (DÍVIDA ATIVA)", "cnpj": "", "centro_custo": "", "meses": {"2026-03": 1031.82}, "total": 1031.82, "forced_mercadoria": false}, {"codigo": "001650", "nome": "MARIA EDUARDA NATIVIDADE CHAVES", "cnpj": "", "centro_custo": "", "meses": {"2026-02": 500.0, "2026-03": 500.0}, "total": 1000.0, "forced_mercadoria": false}, {"codigo": "001664", "nome": "MW TAX RECUPERACAO DE CREDITOS LTDA", "cnpj": "51.063.546/0002-03", "centro_custo": "", "meses": {"2026-05": 987.5}, "total": 987.5, "forced_mercadoria": false}, {"codigo": "001672", "nome": "MERCIANE APARECIDA DINIZ DOS REIS", "cnpj": "", "centro_custo": "", "meses": {"2026-06": 950.0}, "total": 950.0, "forced_mercadoria": false}, {"codigo": "001667", "nome": "DESTAK VIDROS", "cnpj": "", "centro_custo": "", "meses": {"2026-04": 890.0}, "total": 890.0, "forced_mercadoria": false}, {"codigo": "001419", "nome": "MARC SISTEMAS - PONTO E ACESSO LTDA", "cnpj": "64.212.376/0001-42", "centro_custo": "000032", "meses": {"2025-07": 72.5, "2025-08": 72.5, "2025-09": 74.43, "2025-10": 72.5, "2025-11": 72.5, "2025-12": 72.5, "2026-01": 72.5, "2026-02": 72.5, "2026-03": 72.5, "2026-04": 72.5, "2026-05": 72.5, "2026-06": 72.5}, "total": 871.9300000000001, "forced_mercadoria": false}, {"codigo": "001426", "nome": "FELIPE A. DE SOUZA", "cnpj": "12.447.395/0002-35", "centro_custo": "", "meses": {"2026-03": 865.0}, "total": 865.0, "forced_mercadoria": false}, {"codigo": "001630", "nome": "CR PNEUS", "cnpj": "38.565.560/0001-66", "centro_custo": "", "meses": {"2025-08": 858.0}, "total": 858.0, "forced_mercadoria": false}, {"codigo": "001555", "nome": "IMPOSTO PREDIAL E TERRITORIAL URBANO", "cnpj": "", "centro_custo": "", "meses": {"2026-05": 824.36}, "total": 824.36, "forced_mercadoria": false}, {"codigo": "001676", "nome": "NAZARENO OLIVEIRA ISABEL JUNIOR", "cnpj": "", "centro_custo": "", "meses": {"2026-06": 800.0}, "total": 800.0, "forced_mercadoria": false}, {"codigo": "000564", "nome": "CEMIG DISTRIBUICAO S/A (CORREDOR LOJA CX", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 103.09, "2025-08": 47.41, "2025-09": 53.8, "2025-10": 74.51, "2025-11": 53.3, "2025-12": 56.2, "2026-01": 84.39, "2026-02": 70.33, "2026-03": 73.7, "2026-04": 95.09, "2026-05": 75.78}, "total": 787.6, "forced_mercadoria": false}, {"codigo": "001674", "nome": "MAGNO ROOSEVELT DOS SANTOS", "cnpj": "", "centro_custo": "", "meses": {"2026-06": 750.0}, "total": 750.0, "forced_mercadoria": false}, {"codigo": "001669", "nome": "ROBERTO MAURO SILVA SANTOS", "cnpj": "", "centro_custo": "", "meses": {"2026-05": 730.5}, "total": 730.5, "forced_mercadoria": false}, {"codigo": "001643", "nome": "DOAÇÃO", "cnpj": "", "centro_custo": "", "meses": {"2026-01": 700.0}, "total": 700.0, "forced_mercadoria": false}, {"codigo": "001382", "nome": "SAMARA HEMANUELLE GONCALVES SILVA 093903", "cnpj": "23.899.969/0001-41", "centro_custo": "", "meses": {"2025-10": 80.0, "2026-02": 597.9}, "total": 677.9, "forced_mercadoria": false}, {"codigo": "001437", "nome": "CARTORIO DE PROTESTO JORGE ANTONIO DOS S", "cnpj": "", "centro_custo": "", "meses": {"2025-10": 635.36}, "total": 635.36, "forced_mercadoria": false}, {"codigo": "001512", "nome": "CICLO  CAIRU LTDA", "cnpj": "02.513.526/0001-09", "centro_custo": "", "meses": {"2025-08": 311.66, "2025-09": 99.08, "2025-10": 105.64, "2025-11": 98.64}, "total": 615.02, "forced_mercadoria": false}, {"codigo": "001160", "nome": "COPASA - MC MOTO Nº430", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 83.65, "2025-08": 90.33, "2025-12": 197.94, "2026-03": 83.69, "2026-05": 129.91}, "total": 585.52, "forced_mercadoria": false}, {"codigo": "001488", "nome": "T&J COMERCIO DE PAPELARIA CIA LTDA", "cnpj": "41.827.075/0001-28", "centro_custo": "", "meses": {"2025-09": 233.2, "2026-03": 149.34, "2026-05": 169.1}, "total": 551.64, "forced_mercadoria": false}, {"codigo": "001031", "nome": "SUPERMERCADOS BH COMERCIO DE ALIMENTOS L", "cnpj": "", "centro_custo": "", "meses": {"2025-09": 58.0, "2025-10": 50.0, "2025-11": 19.0, "2026-02": 80.0, "2026-03": 172.77, "2026-04": 29.0, "2026-05": 113.0, "2026-06": 25.0}, "total": 546.77, "forced_mercadoria": false}, {"codigo": "001568", "nome": "TAXA DE LIMPEZA E RESIDUOS SOLIDOS", "cnpj": "", "centro_custo": "", "meses": {"2025-08": 123.95, "2025-12": 71.0, "2026-06": 338.92}, "total": 533.87, "forced_mercadoria": false}, {"codigo": "001576", "nome": "KARLA NOGUEIRA", "cnpj": "04.019.217/0001-02", "centro_custo": "", "meses": {"2025-07": 170.0, "2025-09": 100.0, "2026-04": 60.0, "2026-06": 190.0}, "total": 520.0, "forced_mercadoria": false}, {"codigo": "001417", "nome": "FELIPE A. DE SOUZA", "cnpj": "12.447.395/0001-54", "centro_custo": "", "meses": {"2025-10": 170.5, "2025-12": 155.0, "2026-06": 188.0}, "total": 513.5, "forced_mercadoria": false}, {"codigo": "001606", "nome": "EXTINTORES MONTES CLAROS", "cnpj": "", "centro_custo": "", "meses": {"2025-12": 490.0}, "total": 490.0, "forced_mercadoria": false}, {"codigo": "001556", "nome": "IMPOSTO PREDIAL E TERRITORIAL URBANO", "cnpj": "", "centro_custo": "", "meses": {"2026-05": 472.49}, "total": 472.49, "forced_mercadoria": false}, {"codigo": "001277", "nome": "MASTEC CARTUCHOS E TONER DE MONTES CLARO", "cnpj": "09.320.580/0001-79", "centro_custo": "", "meses": {"2025-07": 55.0, "2025-08": 80.0, "2025-11": 80.0, "2026-02": 75.0, "2026-03": 70.0, "2026-04": 70.0}, "total": 430.0, "forced_mercadoria": false}, {"codigo": "001498", "nome": "RAPIDO MONTES CLAROS TRANSPORTE LTDA - M", "cnpj": "10.382.132/0002-60", "centro_custo": "", "meses": {"2025-07": 279.22, "2026-06": 132.61}, "total": 411.83000000000004, "forced_mercadoria": false}, {"codigo": "001566", "nome": "RAPIDO LOG TRANSPORTES LTDA", "cnpj": "48.899.390/0001-00", "centro_custo": "", "meses": {"2025-07": 199.38, "2025-08": 186.64}, "total": 386.02, "forced_mercadoria": false}, {"codigo": "001633", "nome": "PRIMECERT CERTIFICADOS DIGITAIS LTDA", "cnpj": "13.505.721/0001-03", "centro_custo": "", "meses": {"2025-09": 179.0, "2026-01": 179.0}, "total": 358.0, "forced_mercadoria": false}, {"codigo": "001508", "nome": "RAPIDO NORTE DE MINAS LTDA", "cnpj": "48.897.717/0001-04", "centro_custo": "", "meses": {"2025-07": 331.54}, "total": 331.54, "forced_mercadoria": false}, {"codigo": "001531", "nome": "EXPRESSO RAPIDO MONTES CLAROS LTDA", "cnpj": "48.900.373/0001-45", "centro_custo": "", "meses": {"2025-08": 330.02}, "total": 330.02, "forced_mercadoria": false}, {"codigo": "001538", "nome": "DARF", "cnpj": "", "centro_custo": "", "meses": {"2025-12": 268.51}, "total": 268.51, "forced_mercadoria": false}, {"codigo": "001654", "nome": "JADERSON SILVA DO VALE", "cnpj": "", "centro_custo": "", "meses": {"2026-03": 250.0}, "total": 250.0, "forced_mercadoria": false}, {"codigo": "001655", "nome": "AGUA MINERAL", "cnpj": "", "centro_custo": "", "meses": {"2026-03": 50.0, "2026-04": 54.0, "2026-05": 108.0, "2026-06": 26.0}, "total": 238.0, "forced_mercadoria": false}, {"codigo": "001462", "nome": "ICMS - DAE", "cnpj": "", "centro_custo": "", "meses": {"2026-02": 217.7}, "total": 217.7, "forced_mercadoria": false}, {"codigo": "001653", "nome": "IFOOD.COM AGENCIA DE RESTAURANTES ONLINE", "cnpj": "14.380.200/0001-21", "centro_custo": "", "meses": {"2026-03": 205.33}, "total": 205.33, "forced_mercadoria": false}, {"codigo": "001607", "nome": "VICTOR MATHEUS MENDES ARAUJO", "cnpj": "48.100.798/0001-70", "centro_custo": "", "meses": {"2025-11": 169.0}, "total": 169.0, "forced_mercadoria": false}, {"codigo": "001525", "nome": "ROLIMONTES ROLAMENTOS LTDA", "cnpj": "71.510.911/0001-07", "centro_custo": "", "meses": {"2026-04": 88.0, "2026-06": 80.0}, "total": 168.0, "forced_mercadoria": false}, {"codigo": "001549", "nome": "FABRICIO GAS E AGUA MINERAL", "cnpj": "", "centro_custo": "", "meses": {"2025-09": 52.0, "2025-10": 52.0, "2026-03": 26.0, "2026-04": 28.0}, "total": 158.0, "forced_mercadoria": false}, {"codigo": "001027", "nome": "TILICO ELETRONICA LTDA - ME", "cnpj": "", "centro_custo": "", "meses": {"2025-08": 32.0, "2026-03": 111.0}, "total": 143.0, "forced_mercadoria": false}, {"codigo": "000869", "nome": "CARLOS CHANDERLAN MARTINS SANTOS", "cnpj": "15.050.191/0001-73", "centro_custo": "", "meses": {"2026-05": 140.0}, "total": 140.0, "forced_mercadoria": false}, {"codigo": "001220", "nome": "ELETROMONTES MATERIAIS ELETRICOS E HIDRA", "cnpj": "06.090.483/0001-49", "centro_custo": "", "meses": {"2025-08": 60.0, "2026-03": 15.0, "2026-04": 45.0}, "total": 120.0, "forced_mercadoria": false}, {"codigo": "000873", "nome": "GUIA DE ARRECADAÇÃO DE TRIBUTOS MUNICIPA", "cnpj": "", "centro_custo": "", "meses": {"2025-07": 6.37, "2025-09": 6.37, "2025-10": 0.07, "2025-11": 6.37, "2025-12": 6.35, "2026-05": 49.81, "2026-06": 34.99}, "total": 110.33000000000001, "forced_mercadoria": false}, {"codigo": "001639", "nome": "RODOCAP CARGAS", "cnpj": "27.445.266/0001-02", "centro_custo": "", "meses": {"2025-12": 93.13}, "total": 93.13, "forced_mercadoria": false}, {"codigo": "001025", "nome": "ESTACIONAMENTO", "cnpj": "", "centro_custo": "", "meses": {"2026-04": 75.0}, "total": 75.0, "forced_mercadoria": false}, {"codigo": "001641", "nome": "COPYNORTE SERVICOS E COMERCIO LTDA", "cnpj": "02.083.419/0001-80", "centro_custo": "", "meses": {"2025-12": 65.0}, "total": 65.0, "forced_mercadoria": false}, {"codigo": "001443", "nome": "ASTRAL-INDUSTRIA E COMERCIO DE PAES E MA", "cnpj": "04.209.501/0005-67", "centro_custo": "", "meses": {"2025-09": 31.9, "2025-10": 32.0}, "total": 63.9, "forced_mercadoria": false}, {"codigo": "001446", "nome": "DISTRIBUIDORA BOCA DOCE LTDA", "cnpj": "01.635.448/0001-44", "centro_custo": "", "meses": {"2026-05": 50.0}, "total": 50.0, "forced_mercadoria": false}, {"codigo": "001660", "nome": "DOLLAR SHOPPING", "cnpj": "31.238.489/0001-68", "centro_custo": "", "meses": {"2026-03": 33.0}, "total": 33.0, "forced_mercadoria": false}, {"codigo": "001640", "nome": "ELETROMOC", "cnpj": "42.066.557/0001-75", "centro_custo": "", "meses": {"2025-12": 29.0}, "total": 29.0, "forced_mercadoria": false}, {"codigo": "001404", "nome": "SOCIEDADE COMERCIAL CENTRAL ROLAMENTOS L", "cnpj": "07.297.332/0001-29", "centro_custo": "", "meses": {"2026-05": 23.0}, "total": 23.0, "forced_mercadoria": false}, {"codigo": "001601", "nome": "CEL CENTRAL ELETRICA LTDA", "cnpj": "22.334.296/0003-81", "centro_custo": "", "meses": {"2026-05": 22.0}, "total": 22.0, "forced_mercadoria": false}];
+const D = {"fixo_categorias": {"labels": ["ALUGUEL", "FINANCEIRO", "FOLHA/PESSOAL", "IMPOSTOS/GUIAS", "OUTROS PJ", "UTILIDADES"], "colors": {"FOLHA/PESSOAL": "#ff6b6b", "OUTROS PJ": "#4f9eff", "FINANCEIRO": "#ffb454", "IMPOSTOS/GUIAS": "#b48cff", "ALUGUEL": "#3ecf8e", "UTILIDADES": "#4fd6c8"}, "meses": ["2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06"], "dados": {"2025-06": {"FOLHA/PESSOAL": 4539.93, "IMPOSTOS/GUIAS": 7099.21, "OUTROS PJ": 5084.64, "UTILIDADES": 1335.78}, "2025-07": {"ALUGUEL": 8000.0, "FINANCEIRO": 14307.07, "FOLHA/PESSOAL": 22764.44, "IMPOSTOS/GUIAS": 7204.18, "OUTROS PJ": 19211.85, "UTILIDADES": 1545.39}, "2025-08": {"ALUGUEL": 8000.0, "FINANCEIRO": 13971.32, "FOLHA/PESSOAL": 33009.05, "IMPOSTOS/GUIAS": 8234.12, "OUTROS PJ": 12709.68, "UTILIDADES": 1586.04}, "2025-09": {"ALUGUEL": 8000.0, "FINANCEIRO": 13609.19, "FOLHA/PESSOAL": 28325.21, "IMPOSTOS/GUIAS": 7770.0, "OUTROS PJ": 6148.59, "UTILIDADES": 1638.73}, "2025-10": {"ALUGUEL": 8000.0, "FINANCEIRO": 12147.03, "FOLHA/PESSOAL": 26102.15, "IMPOSTOS/GUIAS": 14114.92, "OUTROS PJ": 11003.52, "UTILIDADES": 1675.33}, "2025-11": {"ALUGUEL": 8000.0, "FINANCEIRO": 14066.36, "FOLHA/PESSOAL": 37590.82, "IMPOSTOS/GUIAS": 14472.07, "OUTROS PJ": 7918.22, "UTILIDADES": 1450.97}, "2025-12": {"ALUGUEL": 8000.0, "FINANCEIRO": 15502.53, "FOLHA/PESSOAL": 52566.36, "IMPOSTOS/GUIAS": 17287.1, "OUTROS PJ": 5485.71, "UTILIDADES": 1924.52}, "2026-01": {"ALUGUEL": 8000.0, "FINANCEIRO": 14868.24, "FOLHA/PESSOAL": 32416.74, "IMPOSTOS/GUIAS": 7743.7, "OUTROS PJ": 8237.35, "UTILIDADES": 1408.19}, "2026-02": {"ALUGUEL": 8000.0, "FINANCEIRO": 14088.02, "FOLHA/PESSOAL": 39926.03, "IMPOSTOS/GUIAS": 14465.21, "OUTROS PJ": 7330.86, "UTILIDADES": 1361.85}, "2026-03": {"ALUGUEL": 8000.0, "FINANCEIRO": 14484.95, "FOLHA/PESSOAL": 50801.53, "IMPOSTOS/GUIAS": 26694.41, "OUTROS PJ": 12268.45, "UTILIDADES": 1580.24}, "2026-04": {"ALUGUEL": 8000.0, "FINANCEIRO": 16282.82, "FOLHA/PESSOAL": 46388.0, "IMPOSTOS/GUIAS": 15140.77, "OUTROS PJ": 8574.42, "UTILIDADES": 1334.33}, "2026-05": {"ALUGUEL": 8000.0, "FINANCEIRO": 13822.78, "FOLHA/PESSOAL": 58662.84, "IMPOSTOS/GUIAS": 5579.67, "OUTROS PJ": 10350.29, "UTILIDADES": 1728.29}, "2026-06": {"ALUGUEL": 8000.0, "FINANCEIRO": 14376.0, "FOLHA/PESSOAL": 40118.93, "IMPOSTOS/GUIAS": 4979.11, "OUTROS PJ": 13954.46, "UTILIDADES": 176.48}}}, "merc_fornecedores": {"labels": ["LM COMERCIAL E DISTRIBUIDORA LTDA", "G&B AUTO PECAS ALTERNATIVAS LTDA", "UNIFORT LTDA", "COMERCIAL MOTOCICLO S/A", "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI", "MAGNETRON INDUSTRIA E COMERCIO DE COMPON", "EUROSTAR DO BRASIL S/A", "ATRIA LUB COMERCIO DE LUBRIFICANTES S.A."], "colors": {"LM COMERCIAL E DISTRIBUIDORA LTDA": "#4f9eff", "G&B AUTO PECAS ALTERNATIVAS LTDA": "#3ecf8e", "UNIFORT LTDA": "#ffb454", "COMERCIAL MOTOCICLO S/A": "#b48cff", "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": "#ff8cc6", "MAGNETRON INDUSTRIA E COMERCIO DE COMPON": "#4fd6c8", "EUROSTAR DO BRASIL S/A": "#e8d44f", "ATRIA LUB COMERCIO DE LUBRIFICANTES S.A.": "#ff6b6b"}, "meses": ["2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06"], "dados": {"2025-06": {"ATRIA LUB COMERCIO DE LUBRIFICANTES S.A.": 3345.18, "COMERCIAL MOTOCICLO S/A": 3060.43, "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 2173.98, "EUROSTAR DO BRASIL S/A": 1496.19, "G&B AUTO PECAS ALTERNATIVAS LTDA": 4464.66, "LM COMERCIAL E DISTRIBUIDORA LTDA": 15436.72, "UNIFORT LTDA": 1536.35}, "2025-07": {"ATRIA LUB COMERCIO DE LUBRIFICANTES S.A.": 16753.16, "COMERCIAL MOTOCICLO S/A": 16257.03, "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 7697.13, "EUROSTAR DO BRASIL S/A": 8137.74, "G&B AUTO PECAS ALTERNATIVAS LTDA": 16559.9, "LM COMERCIAL E DISTRIBUIDORA LTDA": 49529.72, "MAGNETRON INDUSTRIA E COMERCIO DE COMPON": 4690.46, "UNIFORT LTDA": 8602.27}, "2025-08": {"ATRIA LUB COMERCIO DE LUBRIFICANTES S.A.": 6603.87, "COMERCIAL MOTOCICLO S/A": 8677.8, "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 6796.64, "EUROSTAR DO BRASIL S/A": 3221.14, "G&B AUTO PECAS ALTERNATIVAS LTDA": 15211.85, "LM COMERCIAL E DISTRIBUIDORA LTDA": 39997.83, "MAGNETRON INDUSTRIA E COMERCIO DE COMPON": 7494.82, "UNIFORT LTDA": 4727.54}, "2025-09": {"ATRIA LUB COMERCIO DE LUBRIFICANTES S.A.": 6890.52, "COMERCIAL MOTOCICLO S/A": 5702.56, "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 4898.13, "G&B AUTO PECAS ALTERNATIVAS LTDA": 9677.57, "LM COMERCIAL E DISTRIBUIDORA LTDA": 39061.37, "MAGNETRON INDUSTRIA E COMERCIO DE COMPON": 14396.73, "UNIFORT LTDA": 5339.54}, "2025-10": {"ATRIA LUB COMERCIO DE LUBRIFICANTES S.A.": 1735.0, "COMERCIAL MOTOCICLO S/A": 10316.53, "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 3217.3, "G&B AUTO PECAS ALTERNATIVAS LTDA": 21798.03, "LM COMERCIAL E DISTRIBUIDORA LTDA": 57860.3, "MAGNETRON INDUSTRIA E COMERCIO DE COMPON": 12685.41, "UNIFORT LTDA": 12957.68}, "2025-11": {"COMERCIAL MOTOCICLO S/A": 6822.46, "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 4658.16, "G&B AUTO PECAS ALTERNATIVAS LTDA": 4655.3, "LM COMERCIAL E DISTRIBUIDORA LTDA": 25854.68, "MAGNETRON INDUSTRIA E COMERCIO DE COMPON": 2125.19, "UNIFORT LTDA": 7807.52}, "2025-12": {"DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 9280.89, "G&B AUTO PECAS ALTERNATIVAS LTDA": 10141.48, "LM COMERCIAL E DISTRIBUIDORA LTDA": 23406.64, "UNIFORT LTDA": 5328.64}, "2026-01": {"COMERCIAL MOTOCICLO S/A": 5761.66, "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 6934.08, "EUROSTAR DO BRASIL S/A": 7261.0, "G&B AUTO PECAS ALTERNATIVAS LTDA": 8128.34, "LM COMERCIAL E DISTRIBUIDORA LTDA": 18029.87, "UNIFORT LTDA": 3438.85}, "2026-02": {"COMERCIAL MOTOCICLO S/A": 5761.52, "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 5563.52, "EUROSTAR DO BRASIL S/A": 7261.0, "G&B AUTO PECAS ALTERNATIVAS LTDA": 8895.26, "LM COMERCIAL E DISTRIBUIDORA LTDA": 19510.9, "UNIFORT LTDA": 6116.1}, "2026-03": {"ATRIA LUB COMERCIO DE LUBRIFICANTES S.A.": 5877.79, "COMERCIAL MOTOCICLO S/A": 5761.52, "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 8933.24, "EUROSTAR DO BRASIL S/A": 9076.25, "G&B AUTO PECAS ALTERNATIVAS LTDA": 10539.65, "LM COMERCIAL E DISTRIBUIDORA LTDA": 35151.37, "MAGNETRON INDUSTRIA E COMERCIO DE COMPON": 4850.8, "UNIFORT LTDA": 8593.15}, "2026-04": {"ATRIA LUB COMERCIO DE LUBRIFICANTES S.A.": 6689.71, "COMERCIAL MOTOCICLO S/A": 5761.52, "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 9178.75, "EUROSTAR DO BRASIL S/A": 7260.93, "G&B AUTO PECAS ALTERNATIVAS LTDA": 14506.89, "LM COMERCIAL E DISTRIBUIDORA LTDA": 34071.47, "MAGNETRON INDUSTRIA E COMERCIO DE COMPON": 9701.6, "UNIFORT LTDA": 13145.24}, "2026-05": {"ATRIA LUB COMERCIO DE LUBRIFICANTES S.A.": 3938.7, "COMERCIAL MOTOCICLO S/A": 2880.76, "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 2632.15, "EUROSTAR DO BRASIL S/A": 10002.45, "G&B AUTO PECAS ALTERNATIVAS LTDA": 18480.55, "LM COMERCIAL E DISTRIBUIDORA LTDA": 38664.93, "MAGNETRON INDUSTRIA E COMERCIO DE COMPON": 9701.63, "UNIFORT LTDA": 8422.48}, "2026-06": {"DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI": 2061.45, "EUROSTAR DO BRASIL S/A": 6668.3, "G&B AUTO PECAS ALTERNATIVAS LTDA": 12583.32, "LM COMERCIAL E DISTRIBUIDORA LTDA": 32354.56, "UNIFORT LTDA": 5152.86}}}, "top_merc_forn": [{"nome": "LM COMERCIAL E DISTRIBUIDORA LTDA", "total": 428930.36}, {"nome": "G&B AUTO PECAS ALTERNATIVAS LTDA", "total": 155642.8}, {"nome": "UNIFORT LTDA", "total": 91168.22}, {"nome": "COMERCIAL MOTOCICLO S/A", "total": 76763.79}, {"nome": "DAMASIO DISTRIBUIDORA DE MOTOPECAS DE MI", "total": 74025.42}, {"nome": "MAGNETRON INDUSTRIA E COMERCIO DE COMPON", "total": 65646.64}, {"nome": "EUROSTAR DO BRASIL S/A", "total": 60385.0}, {"nome": "ATRIA LUB COMERCIO DE LUBRIFICANTES S.A.", "total": 51833.93}], "top_fixo_forn": [{"nome": "EMPRESTIMO ITAU", "total": 125373.49}, {"nome": "JACKSON DE JESUS RAMETTA - ALUGUEL MC MO", "total": 96000.0}, {"nome": "DIOGO DE OLIVEIRA CHAVES", "total": 58690.0}, {"nome": "DINO CESAR FRANCISCO DA SILVA", "total": 50390.48}, {"nome": "GILMAR GONÇALVES DOS SANTOS", "total": 45847.52}, {"nome": "RAFAEL RIBEIRO CRUZ", "total": 41803.94}, {"nome": "ANGELA MARIA VIEIRA", "total": 40517.52}, {"nome": "GUIA FGTS", "total": 40345.4}, {"nome": "CARTÃO DE CREDITO - ITAU", "total": 36627.15}, {"nome": "VITOR RODRIGUES DO CARMO SANTOS", "total": 31792.62}, {"nome": "GRACIELLE CRISTINA MENDES VIEIRA", "total": 30302.04}, {"nome": "JHONATA WILLIAM FERREIRA SILVA", "total": 26540.53}]};
+const FOLHA_ANTIGA = 60313.42, FOLHA_RECENTE = 145169.77, FOLHA_PCT = 141;
+const FOLHA_PCT_FAT_ANTIGA = 10.6, FOLHA_PCT_FAT_RECENTE = 20.0;
+
+const fmtMoney = v => 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+const nomesMes = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const fmtMes = m => { const [y,mo] = m.split('-'); return nomesMes[parseInt(mo)] + '/' + y.slice(2); };
+
+document.getElementById('alertFolha').innerHTML = `⚠️ <b>Folha de Pessoal subiu ${FOLHA_PCT}%</b>: ${fmtMoney(FOLHA_ANTIGA)} (primeiros 3 meses do período) → ${fmtMoney(FOLHA_RECENTE)} (últimos 3 meses). Como % do faturamento, foi de <b>${FOLHA_PCT_FAT_ANTIGA}% para ${FOLHA_PCT_FAT_RECENTE}%</b> da receita.`;
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+function defaultClassification(codigo, centro, forcedMercadoria){
+  if(forcedMercadoria) return 'MERCADORIA';
+  if(centro === '000011') return 'MERCADORIA';
+  return 'FIXO';
+}
+let overrides = {};
+function currentClassification(s){ return overrides[s.codigo] || defaultClassification(s.codigo, s.centro_custo, s.forced_mercadoria); }
+
+function computeMonthly(){
+  const merc = {}, fixo = {}, variavel = {};
+  SUPPLIERS.forEach(s=>{
+    const cls = currentClassification(s);
+    const target = cls==='MERCADORIA' ? merc : (cls==='VARIAVEL' ? variavel : fixo);
+    Object.entries(s.meses).forEach(([mes,val])=>{ target[mes] = (target[mes]||0) + val; });
+  });
+  return {merc, fixo, variavel};
+}
+
+function renderKpis(merc, fixo, variavel){
+  const totalMerc = Object.values(merc).reduce((a,b)=>a+b,0);
+  const totalFixo = Object.values(fixo).reduce((a,b)=>a+b,0);
+  const totalVar = Object.values(variavel).reduce((a,b)=>a+b,0);
+  const kpis = [
+    {label:'Mercadoria quitada (12m)', value: fmtMoney(totalMerc), delta:'distribuidoras + reclassificados', cls:'neutral'},
+    {label:'Custo fixo quitado (12m)', value: fmtMoney(totalFixo), delta:'folha+aluguel+empréstimo+impostos', cls:'neutral'},
+    {label:'Custo variável quitado (12m)', value: fmtMoney(totalVar), delta: totalVar>0 ? 'reclassificado manualmente' : 'nenhum fornecedor movido ainda', cls:'neutral'},
+    {label:'Folha como % do faturamento', value: FOLHA_PCT_FAT_RECENTE+'%', delta:'vs '+FOLHA_PCT_FAT_ANTIGA+'% no início do período', cls:'up'},
+  ];
+  document.getElementById('kpis').innerHTML = kpis.map(k=>`
+    <div class="kpi"><div class="label">${k.label}</div><div class="value">${k.value}</div><div class="delta ${k.cls}">${k.delta}</div></div>`).join('');
+}
+
+function barChart(svgId, dataMap, color){
+  const svg = document.getElementById(svgId);
+  const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+  const W=vb[2], H=vb[3], padL=55,padR=10,padT=14,padB=28;
+  const w=W-padL-padR, h=H-padT-padB;
+  const months = Object.keys(dataMap).sort();
+  if(months.length===0){ svg.innerHTML = `<text x="${W/2}" y="${H/2}" font-size="12" fill="#8b98a9" text-anchor="middle">Sem dados nesta categoria</text>`; return; }
+  const vals = months.map(m=>dataMap[m]);
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  const maxV = Math.max(...vals, avg)*1.18 || 1;
+  const n = months.length;
+  const bw = w/n*0.6;
+  let s='';
+  for(let i=0;i<=4;i++){
+    const y = padT+h-(h*i/4);
+    s+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#2a3340"/>`;
+    s+=`<text x="${padL-6}" y="${y+4}" font-size="10" fill="#8b98a9" text-anchor="end">R$${Math.round(maxV*i/4/1000)}k</text>`;
+  }
+  months.forEach((m,i)=>{
+    const cx = padL + w*(i+0.5)/n;
+    const x = cx-bw/2;
+    const hh = h*vals[i]/maxV;
+    s += `<rect x="${x}" y="${padT+h-hh}" width="${bw}" height="${hh}" fill="${color}" rx="2" style="cursor:pointer" onmouseover="this.setAttribute('opacity','0.7')" onmouseout="this.setAttribute('opacity','1')"><title>${fmtMes(m)}: ${fmtMoney(vals[i])}</title></rect>`;
+    s += `<text x="${cx}" y="${H-8}" font-size="9" fill="#8b98a9" text-anchor="middle">${fmtMes(m)}</text>`;
+  });
+  const yAvg = padT+h-(h*avg/maxV);
+  s += `<line x1="${padL}" y1="${yAvg}" x2="${W-padR}" y2="${yAvg}" stroke="#e6edf3" stroke-width="1.5" stroke-dasharray="5,4"><title>Média: ${fmtMoney(avg)}</title></line>`;
+  s += `<text x="${W-padR}" y="${yAvg-5}" font-size="10" fill="#e6edf3" text-anchor="end">média: ${fmtMoney(avg)}</text>`;
+  svg.innerHTML = s;
+}
+
+function stackedChart(svgId, legendId, conf){
+  const svg = document.getElementById(svgId);
+  const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+  const W=vb[2], H=vb[3], padL=55,padR=10,padT=14,padB=28;
+  const w=W-padL-padR, h=H-padT-padB;
+  const months = conf.meses;
+  const totals = months.map(m => conf.labels.reduce((s,l)=> s+(conf.dados[m]&&conf.dados[m][l]||0), 0));
+  const avg = totals.reduce((a,b)=>a+b,0)/totals.length;
+  const maxV = Math.max(...totals, avg)*1.18;
+  const n = months.length;
+  const bw = w/n*0.62;
+  let s='';
+  for(let i=0;i<=4;i++){
+    const y = padT+h-(h*i/4);
+    s+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#2a3340"/>`;
+    s+=`<text x="${padL-6}" y="${y+4}" font-size="10" fill="#8b98a9" text-anchor="end">R$${Math.round(maxV*i/4/1000)}k</text>`;
+  }
+  months.forEach((m,i)=>{
+    const cx = padL + w*(i+0.5)/n;
+    const x = cx-bw/2;
+    let yCursor = padT+h;
+    conf.labels.forEach(l=>{
+      const v = (conf.dados[m]&&conf.dados[m][l])||0;
+      if(v>0){
+        const hh = h*v/maxV;
+        s += `<rect x="${x}" y="${yCursor-hh}" width="${bw}" height="${hh}" fill="${conf.colors[l]}" style="cursor:pointer" onmouseover="this.setAttribute('opacity','0.7')" onmouseout="this.setAttribute('opacity','1')"><title>${l} — ${fmtMes(m)}: ${fmtMoney(v)}</title></rect>`;
+        yCursor -= hh;
+      }
+    });
+    s += `<text x="${cx}" y="${H-8}" font-size="9" fill="#8b98a9" text-anchor="middle">${fmtMes(m)}</text>`;
+  });
+  const yAvg = padT+h-(h*avg/maxV);
+  s += `<line x1="${padL}" y1="${yAvg}" x2="${W-padR}" y2="${yAvg}" stroke="#e6edf3" stroke-width="1.5" stroke-dasharray="5,4"><title>Média do total: ${fmtMoney(avg)}</title></line>`;
+  s += `<text x="${W-padR}" y="${yAvg-5}" font-size="10" fill="#e6edf3" text-anchor="end">média: ${fmtMoney(avg)}</text>`;
+  svg.innerHTML = s;
+  document.getElementById(legendId).innerHTML = conf.labels.map(l=>`<span><i class="dot" style="background:${conf.colors[l]}"></i>${l}</span>`).join('');
+}
+
+function totalChart(svgId, merc, fixo, variavel){
+  const svg = document.getElementById(svgId);
+  const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+  const W=vb[2], H=vb[3], padL=58,padR=12,padT=24,padB=28;
+  const w=W-padL-padR, h=H-padT-padB;
+  const months = Array.from(new Set([].concat(Object.keys(merc),Object.keys(fixo),Object.keys(variavel)))).sort();
+  if(months.length===0){ svg.innerHTML=`<text x="${W/2}" y="${H/2}" font-size="12" fill="#8b98a9" text-anchor="middle">Sem dados</text>`; return; }
+  const totals = months.map(m=>(merc[m]||0)+(fixo[m]||0)+(variavel[m]||0));
+  const avg = totals.reduce((a,b)=>a+b,0)/totals.length;
+  const maxV = Math.max.apply(null, totals.concat([avg]))*1.18 || 1;
+  const n=months.length, bw=w/n*0.62;
+  let s='';
+  for(let i=0;i<=4;i++){
+    const y = padT+h-(h*i/4);
+    s+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#2a3340"/>`;
+    s+=`<text x="${padL-6}" y="${y+4}" font-size="10" fill="#8b98a9" text-anchor="end">R$${Math.round(maxV*i/4/1000)}k</text>`;
+  }
+  const segs = [['Mercadoria',merc,'#b48cff'],['Custo Fixo',fixo,'#ffb454'],['Custo Variável',variavel,'#4fd6c8']];
+  months.forEach((m,i)=>{
+    const cx = padL + w*(i+0.5)/n, x = cx-bw/2;
+    let yTop = padT+h;
+    segs.forEach(([nome,map,color])=>{
+      const val = map[m]||0; if(val<=0) return;
+      const hh = h*val/maxV; yTop -= hh;
+      s += `<rect x="${x}" y="${yTop}" width="${bw}" height="${hh}" fill="${color}" style="cursor:pointer" onmouseover="this.setAttribute('opacity','0.75')" onmouseout="this.setAttribute('opacity','1')"><title>${fmtMes(m)} — ${nome}: ${fmtMoney(val)}\nTotal do mês: ${fmtMoney(totals[i])}</title></rect>`;
+    });
+    const totalHh = h*totals[i]/maxV;
+    s += `<text x="${cx}" y="${padT+h-totalHh-5}" font-size="9" fill="#e6edf3" text-anchor="middle" font-weight="600">${fmtMoney(totals[i])}</text>`;
+    s += `<text x="${cx}" y="${H-8}" font-size="9" fill="#8b98a9" text-anchor="middle">${fmtMes(m)}</text>`;
+  });
+  const yAvg = padT+h-h*avg/maxV;
+  s += `<line x1="${padL}" y1="${yAvg}" x2="${W-padR}" y2="${yAvg}" stroke="#8b98a9" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+  s += `<text x="${W-padR}" y="${yAvg-4}" font-size="10" fill="#8b98a9" text-anchor="end" font-weight="600">Média ${fmtMoney(avg)}</text>`;
+  svg.innerHTML = s;
+}
+
+function redrawPrincipal(){
+  const {merc, fixo, variavel} = computeMonthly();
+  renderKpis(merc, fixo, variavel);
+  totalChart('chartTotalPago', merc, fixo, variavel);
+  barChart('chartMercadoriaQuitado', merc, '#b48cff');
+  barChart('chartFixoQuitado', fixo, '#ffb454');
+  barChart('chartVariavelQuitado', variavel, '#4fd6c8');
+}
+
+stackedChart('chartFixoCategoria','legendFixoCat', D.fixo_categorias);
+stackedChart('chartMercForn','legendMercForn', D.merc_fornecedores);
+document.getElementById('tblMercForn').innerHTML = `<tr><th>Fornecedor</th><th class="right">Pago (12m)</th></tr>${D.top_merc_forn.map(f=>`<tr><td>${f.nome}</td><td class="right">${fmtMoney(f.total)}</td></tr>`).join('')}`;
+document.getElementById('tblFixoForn').innerHTML = `<tr><th>Fornecedor/Item</th><th class="right">Pago (12m)</th></tr>${D.top_fixo_forn.map(f=>`<tr><td>${f.nome}</td><td class="right">${fmtMoney(f.total)}</td></tr>`).join('')}`;
+redrawPrincipal();
+
+function fornCardHtml(s){
+  const isOverride = !!overrides[s.codigo];
+  const badgeCls = s.centro_custo==='000011' ? 'badge-merc' : (s.forced_mercadoria ? 'badge-merc' : 'badge-fixo');
+  const badgeTxt = s.centro_custo ? `centro: ${s.centro_custo}` : (s.forced_mercadoria ? 'mercadoria (manual)' : 'sem centro');
+  const badgeOriginal = `<span class="fn-badge ${badgeCls}">${badgeTxt}</span>`;
+  const badgeChanged = isOverride ? `<span class="fn-badge badge-changed">alterado</span>` : '';
+  return `<div class="forn-card" draggable="true" data-codigo="${s.codigo}">
+    <span class="fn-nome">${s.nome}</span>
+    <div class="fn-meta"><span>${badgeOriginal}${badgeChanged}</span><span>${fmtMoney(s.total)}</span></div>
+  </div>`;
+}
+function renderFornLists(filter){
+  filter = (filter||'').toLowerCase();
+  const merc=[], fixo=[], variavel=[];
+  SUPPLIERS.forEach(s=>{
+    if(filter && !s.nome.toLowerCase().includes(filter) && !s.codigo.includes(filter)) return;
+    const cls = currentClassification(s);
+    if(cls==='MERCADORIA') merc.push(s); else if(cls==='VARIAVEL') variavel.push(s); else fixo.push(s);
+  });
+  document.getElementById('listMercadoria').innerHTML = merc.map(fornCardHtml).join('');
+  document.getElementById('listFixo').innerHTML = fixo.map(fornCardHtml).join('');
+  document.getElementById('listVariavel').innerHTML = variavel.map(fornCardHtml).join('');
+  document.getElementById('countMercadoria').textContent = merc.length + ' fornecedores';
+  document.getElementById('countFixo').textContent = fixo.length + ' fornecedores';
+  document.getElementById('countVariavel').textContent = variavel.length + ' fornecedores';
+  attachDragEvents();
+  togglePendingBanner();
+}
+function togglePendingBanner(){
+  const n = Object.keys(overrides).length;
+  const banner = document.getElementById('pendingBanner');
+  if(n>0){ banner.classList.add('show'); document.getElementById('pendingText').textContent = `${n} fornecedor(es) reclassificado(s). Clique em "Atualizar Painel Principal" na aba Fornecedores para aplicar.`; }
+  else banner.classList.remove('show');
+}
+function attachDragEvents(){
+  document.querySelectorAll('.forn-card').forEach(card=>{
+    card.addEventListener('dragstart', e=>{ card.classList.add('dragging'); e.dataTransfer.setData('text/plain', card.dataset.codigo); });
+    card.addEventListener('dragend', ()=> card.classList.remove('dragging'));
+  });
+  document.querySelectorAll('.dropzone').forEach(zone=>{
+    zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', ()=> zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e=>{
+      e.preventDefault(); zone.classList.remove('dragover');
+      const codigo = e.dataTransfer.getData('text/plain');
+      const targetCls = zone.dataset.zone;
+      const supplier = SUPPLIERS.find(s=>s.codigo===codigo);
+      if(!supplier) return;
+      const defaultCls = defaultClassification(supplier.codigo, supplier.centro_custo, supplier.forced_mercadoria);
+      if(targetCls === defaultCls) delete overrides[codigo]; else overrides[codigo] = targetCls;
+      renderFornLists(document.getElementById('fornSearch').value);
+    });
+  });
+}
+document.getElementById('fornSearch').addEventListener('input', e=> renderFornLists(e.target.value));
+document.getElementById('btnReset').addEventListener('click', ()=>{ overrides = {}; renderFornLists(document.getElementById('fornSearch').value); });
+document.getElementById('btnUpdate').addEventListener('click', ()=>{
+  redrawPrincipal();
+  document.querySelector('.tab-btn[data-tab="principal"]').click();
+  togglePendingBanner();
+});
+renderFornLists('');
+
+// ---------- Indicadores Gerenciais (planilha "gerencial MC" + estimativas do banco) ----------
+const GER_MESES = ['2025-04','2025-05','2025-06','2025-07','2025-08','2025-09','2025-10','2025-11','2025-12','2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'];
+const GER_LABELS = ['abr/25','mai/25','jun/25','jul/25','ago/25','set/25','out/25','nov/25','dez/25','jan/26','fev/26','mar/26','abr/26','mai/26','jun/26'];
+// v: valor oficial da planilha (null se em branco) | e: estimativa calculada do banco (usada quando v é null)
+const GER_DATA = {
+  vendas_avista:  {v:[176328,167625,154349,165554,180834,145252,158479,146287,177526,175593,153432,null,null,null,null], e:{ '2026-03':203624, '2026-04':218730, '2026-05':204839, '2026-06':125957 }},
+  vendas_aprazo:  {v:[100580,100810,87950,100535,100548,92780,102238,88068,88496,94665,92061,null,null,null,null], e:{ '2026-03':64278, '2026-04':67992, '2026-05':65228, '2026-06':43306 }},
+  devolucao:      {v:[5096,5059,3682,2886,4908,5200,3555,5441,4280,3068,3745,4396,null,null,null], e:{ '2026-04':4500, '2026-05':4300, '2026-06':2800 }},
+  vendas_totais:  {v:[271812,263376,238617,263203,276475,232832,257162,228914,261742,267190,241748,264813,282557,null,null], e:{ '2026-05':270067, '2026-06':169263 }},
+  cmv:            {v:[164707,156315,145504,159530,169579,146345,157265,144391,163983,158068,151779,162232,175040,null,null], e:{ '2026-05':165431, '2026-06':102287 }},
+  comissao:       {v:[2718,2634,2386,2632,2765,2328,2572,2289,2617,2672,2417,2648,2826,null,null], e:{ '2026-05':2711, '2026-06':3727 }},
+  imposto:        {v:[24789,22729,22443,22361,25527,22753,19408,19750,11343,11805,5029,null,null,null,null], e:{ '2026-03':26694, '2026-04':15141, '2026-05':4283, '2026-06':4979 }},
+  margem_contrib: {v:[79135,81112,67662,78240,78136,60930,77109,62110,83445,94445,81936,99933,null,null,null], e:{ '2026-04':91607, '2026-05':97642, '2026-06':58269 }},
+  custo_fixo:     {v:[42352,49462,49131,40767,50020,45306,41857,56925,81358,54345,61124,null,null,null,null], e:{ '2026-03':99898, '2026-04':80814, '2026-05':84875, '2026-06':69864 }},
+  despesa_financ: {v:[0,0,0,1680,9821,15395,14469,13853,9197,5302,2164,null,null,null,null], e:{ '2026-03':13931, '2026-04':14906, '2026-05':13269, '2026-06':11741 }},
+  resultado:      {v:[36783,31650,18531,35794,18295,229,20783,-8668,-7110,34798,18648,99933,null,null,null], e:{ '2026-03':-39391, '2026-04':-4113, '2026-05':-502, '2026-06':-23336 }},
+  compras:        {v:[124314,195428,337838,325930,110303,44439,69550,124084,165084,171569,115314,194415,null,null,null], e:{ '2026-04':170733, '2026-05':157803, '2026-06':106457 }},
+  caixa_bancos:   {v:[65000,36774,18959,-7099,-57804,-58261,-59828,-45581,-22555,13562,1085,35495,null,null,null], e:{ }},
+  funcionarios:   {v:[10,10,10,10,10,10,10,10,9,9,10,10,null,null,null], e:{ '2026-04':8, '2026-05':10, '2026-06':9 }},
+};
+const GER_ROWS = [
+  ['vendas_avista','VENDAS À VISTA'], ['vendas_aprazo','VENDAS A PRAZO'], ['devolucao','DEVOLUÇÃO'],
+  ['vendas_totais','VENDAS TOTAIS'], ['cmv','CMV'], ['comissao','COMISSÃO'], ['imposto','IMPOSTO'],
+  ['margem_contrib','MARGEM DE CONTRIBUIÇÃO'], ['custo_fixo','CUSTO FIXO'], ['despesa_financ','DESPESA FINANCEIRA'],
+  ['resultado','RESULTADO'], ['compras','COMPRAS (mercadoria)'], ['caixa_bancos','CAIXA/BANCOS'], ['funcionarios','FUNCIONÁRIOS LOJA'],
+];
+function gerCell(key, idx){
+  const row = GER_DATA[key];
+  const mes = GER_MESES[idx];
+  const oficial = row.v[idx];
+  if(oficial !== null) return {val: oficial, estimado:false};
+  if(row.e[mes] !== undefined) return {val: row.e[mes], estimado:true};
+  return {val: null, estimado:false};
+}
+function renderGerencial(){
+  let head = '<tr><th>Indicador</th>' + GER_LABELS.map(l=>`<th class="right">${l}</th>`).join('') + '</tr>';
+  let body = GER_ROWS.map(([key,label])=>{
+    const cells = GER_MESES.map((m,i)=>{
+      const c = gerCell(key, i);
+      if(c.val===null) return '<td class="right">—</td>';
+      const cls = key==='funcionarios' ? '' : '';
+      const txt = key==='funcionarios' ? c.val : fmtMoney(c.val);
+      const badge = c.estimado ? ' <span class="fn-badge badge-changed" title="Estimado a partir do banco mc_moto">est.</span>' : '';
+      const colorNeg = (typeof c.val==='number' && c.val<0 && key!=='resultado_dummy') ? 'color:#ff8a8a' : '';
+      return `<td class="right" style="${colorNeg}">${txt}${badge}</td>`;
+    }).join('');
+    return `<tr><td><b>${label}</b></td>${cells}</tr>`;
+  }).join('');
+  document.getElementById('tblGerencial').innerHTML = head + body;
+
+  const svg = document.getElementById('chartCaixaBancos');
+  const vb = svg.getAttribute('viewBox').split(' ').map(Number);
+  const W=vb[2], H=vb[3], padL=55,padR=10,padT=14,padB=28;
+  const w=W-padL-padR, h=H-padT-padB;
+  const vals = GER_MESES.map((m,i)=> gerCell('caixa_bancos', i).val).filter(v=>v!==null);
+  const estFlags = GER_MESES.map((m,i)=> gerCell('caixa_bancos', i));
+  const n = estFlags.filter(c=>c.val!==null).length;
+  const maxAbs = Math.max(...vals.map(v=>Math.abs(v)))*1.2 || 1;
+  const zeroY = padT + h/2;
+  let s = `<line x1="${padL}" y1="${zeroY}" x2="${W-padR}" y2="${zeroY}" stroke="#3a4452" stroke-width="1.5"/>`;
+  const bw = w/n*0.6;
+  let i2=0;
+  estFlags.forEach((c,i)=>{
+    if(c.val===null) return;
+    const cx = padL + w*(i2+0.5)/n;
+    const x = cx-bw/2;
+    const hh = (h/2) * Math.abs(c.val)/maxAbs;
+    const color = c.val>=0 ? '#3ecf8e' : '#ff6b6b';
+    const y = c.val>=0 ? zeroY-hh : zeroY;
+    s += `<rect x="${x}" y="${y}" width="${bw}" height="${hh}" fill="${color}" rx="2" opacity="${c.estimado?0.55:1}" style="cursor:pointer" onmouseover="this.setAttribute('opacity','0.8')" onmouseout="this.setAttribute('opacity','${c.estimado?0.55:1}')"><title>${GER_LABELS[i]}${c.estimado?' (estimado)':''}: ${fmtMoney(c.val)}</title></rect>`;
+    s += `<text x="${cx}" y="${H-8}" font-size="9" fill="#8b98a9" text-anchor="middle">${GER_LABELS[i]}${c.estimado?'*':''}</text>`;
+    i2++;
+  });
+  s += `<text x="${padL-6}" y="${zeroY+4}" font-size="10" fill="#8b98a9" text-anchor="end">R$0</text>`;
+  svg.innerHTML = s;
+}
+renderGerencial();
+</script>
+</body>
+</html>
