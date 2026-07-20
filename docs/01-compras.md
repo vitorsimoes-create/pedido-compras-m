@@ -14,7 +14,7 @@ Array JS embutido em `index.html`, ~18.945 itens de catálogo, um objeto por pro
 | `p` | Preço/custo unitário (R$) | Não — estático |
 | `k` | **Pico de vendas mensal líquido** — ver fórmula exata abaixo | **Sim**, diariamente |
 | `e` | Estoque atual (`SALDO`, pode ser negativo) | **Sim**, diariamente |
-| `s` | **Sugestão de compra** = `pico − estoque` (`k − e`) | Calculada no navegador ao carregar a página a partir de `k` e `e` — ver nota abaixo |
+| `s` | **Sugestão de compra** = `pico − estoque` (`k − e`) | **Sim** — gravada diariamente pela rotina e também recalculada ao vivo no navegador (ver nota abaixo) |
 | `nc` | Flag de restrição de compra / faixa de comissão (0, 1 ou 2) — ver regra "Comprar?" abaixo | **Sim**, diariamente |
 | `cf` | Código do fabricante (exibido na coluna "Cód. Fabricante") | **Sim**, diariamente |
 | `f` | Nome do fornecedor | **Sim**, diariamente |
@@ -22,7 +22,7 @@ Array JS embutido em `index.html`, ~18.945 itens de catálogo, um objeto por pro
 
 ### Nota sobre o campo `s` (sugestão de compra)
 
-**Fórmula: `s = pico − estoque` (`k − e`), recalculada no navegador ao carregar a página** (na mesma passada em que `item.g` é preenchido, logo após o `RAW_DATA`). Pode ser negativa quando o item está superestocado (estoque maior que o pico mensal) — nesse caso a interface mostra o badge de sugestão em vermelho.
+**Fórmula: `s = pico − estoque` (`k − e`).** É calculada em dois lugares que sempre concordam: (1) **no navegador ao carregar a página** (na mesma passada em que `item.g` é preenchido, logo após o `RAW_DATA`) — esse é o mecanismo que garante que nunca fica defasada; e (2) **gravada no próprio JSON pela rotina diária** (`atualizacao-diaria-painel`, Parte A), logo após atualizar `k` e `e`, só para manter o dado armazenado consistente com o exibido. Pode ser negativa quando o item está superestocado (estoque maior que o pico mensal) — nesse caso a interface mostra o badge de sugestão em vermelho.
 
 Histórico do bug (20/07/2026): antes desta correção, `s` vinha **congelado** no JSON do `RAW_DATA` e **não era recalculado** pela rotina diária, enquanto `k` e `e` eram atualizados todo dia — então `s` ia ficando defasado (ex.: item 13262 mostrava sugestão 1 quando o correto, com pico 8 e estoque 2, era 6). O diagnóstico confirmou que 87,7% dos itens ainda batiam com `k − e` exatamente (provando que essa sempre foi a fórmula) e que o restante estava apenas desatualizado. A correção passou a calcular `s` ao vivo a partir de `k`/`e`, então ele **nunca mais fica defasado** e o valor congelado do JSON é irrelevante (é sobrescrito no load).
 
