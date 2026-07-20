@@ -6,6 +6,7 @@ Tabela de consulta rápida com todas as regras numéricas do painel. Para o cont
 
 | Regra | Fórmula / threshold | Onde vive | Documentado em |
 |---|---|---|---|
+| Sugestão de compra (`s`) | `pico − estoque` (`k − e`), recalculada no load | `index.html` (após `RAW_DATA.forEach`) | [01-compras](01-compras.md) |
 | Quantidade padrão ao adicionar item ao pedido/cotação | `item.s > 0 ? item.s : 1` | `index.html`, `toggleItem`/`adicionarTodos`/`toggleCotacaoItem` | [01-compras](01-compras.md) |
 | Filtro "com sugestão de compra" | `item.s > 0` | `index.html`, `filterData` | [01-compras](01-compras.md) |
 | Filtro "sem estoque" | `item.e <= 0` | `index.html`, `filterData` | [01-compras](01-compras.md) |
@@ -43,7 +44,7 @@ Tabela de consulta rápida com todas as regras numéricas do painel. Para o cont
 - **MC%**: MC dividido pela venda, em percentual.
 - **CMV**: Custo da Mercadoria Vendida — soma do custo dos itens efetivamente vendidos em um período.
 - **Pico de vendas**: maior quantidade vendida em um único mês (não soma de meses), dentro da janela dos últimos 12 meses.
-- **Sugestão de compra (`s`)**: quantidade sugerida para reposição de um item. **Origem atual desconhecida** — valor estático não recalculado pela rotina diária (ver [01-compras](01-compras.md)).
+- **Sugestão de compra (`s`)**: quantidade sugerida para reposição = **`pico − estoque` (`k − e`)**, recalculada no navegador ao carregar a página (ver [01-compras](01-compras.md)). Negativa = item superestocado.
 - **Saldo devedor**: soma dos títulos a receber em aberto de um cliente em uma data de referência (reconstruído a partir de emissão/baixa de títulos, não de um snapshot diário real).
 - **Cobertura (de estoque)**: quantos meses o estoque atual dura, no ritmo médio de CMV mensal (`estoque_a_custo / cmv_mensal`).
 - **Giro**: quantas vezes o estoque "virou" no período (`cmv_12m / estoque`).
