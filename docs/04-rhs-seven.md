@@ -27,7 +27,7 @@ Array JS embutido em `index.html` (~21.800 itens), gerado pelo script local `ger
 | `d` | Descrição | `TMER_MERCADORIA.TMER_NOME` |
 | `p` | Custo médio | `TMER_ESTOQUE.TMER_CUSTO_MEDIO` |
 | `k` | Pico de vendas mensal (máximo por mês nos últimos 12m, **nunca soma** — mesma regra da MC MOTO) | `vendas_para_ponto_de_pedido_12m` |
-| `e` | Estoque atual | `TMER_ESTOQUE.TMER_ESTOQUE_ATUAL` |
+| `e` | Estoque total | `TMER_ESTOQUE.TMER_ESTOQUE_TOTAL` — **sempre o TOTAL, nunca o `TMER_ESTOQUE_ATUAL`** (decisão do usuário 21/07/2026): o `ATUAL` fica muito negativo e não reflete o estoque real; `TOTAL = ATUAL + HIST` |
 | `s` | Sugestão de compra = **`pico − estoque` (`k − e`)**, recalculada ao vivo (igual à MC MOTO) e **editável na interface** — ver diferenças abaixo | calculada no navegador a partir de `k`/`e`; a rotina diária também grava `s = k − e` |
 | `cf` | Código original/fabricante | `TMER_MERCADORIA.TMER_CODIGO_ORIGINAL` |
 | `f` | Fornecedor principal (fantasia, ou razão social) | `TFOR_FORNECEDOR` via `TMER_FORNECEDOR_PRINCIPAL_FK` |
