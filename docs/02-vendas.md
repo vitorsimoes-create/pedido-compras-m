@@ -130,6 +130,19 @@ Também aba nativa (`app-tab-vendascomissao`, iframe `vendas-comissao.html`, abe
 - Filtro de período (3 / 6 / 12 meses / todo o histórico), **gráfico de barras por faixa** (valor + participação %), e tabela com participação %, MC, MC% e quantidade líquida, além de uma linha de total.
 - Nota: a distribuição atual concentra-se na faixa **1%** (~59% das vendas) e **5%** (~30%); as faixas 8% e 5% são as que o restante do painel marca como "Não comprar"/"A avaliar" (regra `nc`).
 
+## Gráficos (aba nativa de `index.html`)
+
+Aba nativa `app-tab-graficos` (iframe `graficos-mcmoto.html`, aberta por `abrirSubAbaGraficos`), gerada pelo script local `gerar_graficos_mcmoto.py` (não versionado; roda na rotina diária `atualizacao-diaria-painel`, Parte A, passo A11) a partir do banco `mc_moto`. É um **painel consolidado de gráficos SVG** (sem bibliotecas externas) com filtro de período **12 / 24 meses** (o payload embute 24 meses; o navegador reagrega).
+
+- **KPIs do período:** venda total, margem de contribuição (R$ e MC%), ticket médio e nº de pedidos.
+- **Venda histórica** — barras verticais do faturamento líquido por mês.
+- **Margem de contribuição** — barras de MC (R$) por mês com linha sobreposta de MC% (eixo direito).
+- **Ticket médio** — linha (com área) do valor médio por pedido por mês.
+- **Grupo de mercadoria** — barras horizontais por grupo de produto (top 12 + "Outros"), com participação % e MC%.
+- **Grupo de comissão** — barras horizontais por faixa `produtos.COMISSAO_AVISTA`, com participação % e MC%.
+- **Definições (batem com as abas existentes):** a série mensal (venda histórica / MC / ticket) usa a **mesma base da aba Vendas Históricas** (vendas líquidas de devoluções no nível do pedido). Grupo de mercadoria e grupo de comissão usam a **mesma base da aba Vendas por Grupo de Comissão** (netagem por `QTD_DEVOLVIDA`/`QTD_ESTORNADA` na linha do item); grupo de mercadoria reaproveita a reclassificação de DIVERSOS/SEM GRUPO por palavra-chave do `atualizar_mapa.py`. Por usarem bases diferentes (nível pedido vs. nível item), os totais das duas visões não batem exatamente entre si — é a mesma inconsistência já documentada abaixo.
+- O mês corrente é marcado como **parcial**.
+
 ## Inconsistências conhecidas (documentadas como fato, não como bug pendente)
 
 Estas diferenças são reais no código atual e devem ser levadas em conta ao comparar números entre sub-abas — não são necessariamente erros a corrigir, mas comportamento que precisa ser conhecido:
