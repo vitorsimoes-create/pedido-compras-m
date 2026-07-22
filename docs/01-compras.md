@@ -88,13 +88,13 @@ Ou seja: usa a sugestão de compra se ela for positiva; caso contrário, começa
 "Adicionar todos" (adiciona todo o resultado filtrado de uma vez) pede confirmação extra se o filtro atual tiver mais de **200 itens**.
 
 ### Painel do pedido e totais
-Itens agrupados por fornecedor, com subtotal por fornecedor (`Σ preço × quantidade`) e total geral. Itens adicionados manualmente (`s ≤ 0`) recebem destaque visual (borda âmbar + fundo claro + badge "MANUAL").
+Desde 22/07/2026, o pedido de compra da MC MOTO é apresentado como **lista única de produtos** (não é mais separado em blocos por fornecedor) — decisão do usuário: "não quero múltiplos fornecedores, apenas os produtos". Mantém-se uma coluna **Fornecedor** por linha para referência, e há apenas o **total geral** (sem subtotais por fornecedor). Isso vale nas três superfícies: o modal `exportarPedido`, a janela separada `abrirPedidoAba` e os arquivos exportados (CSV/PDF via `buildCSV`/`buildPDFHtml`). Itens adicionados manualmente (`s ≤ 0`) recebem destaque visual (badge "MANUAL").
 
 ### Exportações
 - **Texto** (modal com tabela formatada para copiar/colar).
-- **CSV** — separado por `;`, com BOM UTF-8 (compatibilidade Excel pt-BR); código de fabricante é envolvido em `="código"` para preservar zeros à esquerda; itens manuais recebem sufixo `[MANUAL]` na descrição.
-- **PDF** — HTML A4 paisagem, impresso via `window.print()`.
-- **Aba separada (janela nova)** — abre o pedido em uma página independente, com campos de quantidade/sugestão editáveis ao vivo e recálculo automático de subtotais; ao salvar, sincroniza as edições de volta para a janela principal (`window.opener.pedido`) e aciona o salvamento como Pedido Salvo.
+- **CSV** — separado por `;`, com BOM UTF-8 (compatibilidade Excel pt-BR); colunas `Código;Descrição;Fornecedor;Grupo;Cód. Fabricante;…`; código de fabricante é envolvido em `="código"` para preservar zeros à esquerda; itens manuais recebem sufixo `[MANUAL]` na descrição.
+- **PDF** — HTML A4 paisagem (tabela única com coluna Fornecedor), impresso via `window.print()`.
+- **Aba separada (janela nova, `abrirPedidoAba`)** — abre o pedido em uma página independente, tabela única com campos de quantidade/sugestão editáveis ao vivo e recálculo automático do total geral. Além de **💾 Salvar Pedido** e **🖨️ Imprimir**, a janela tem botões **⬇ Excel (.csv)** e **🖨 PDF** (iguais aos da RHS/SEVEN): eles primeiro sincronizam as edições de qtd/sugestão de volta para `window.opener.pedido` e então chamam `exportarExcelDireto()`/`exportarPDFDireto()`.
 
 ## Pedidos Salvos
 
