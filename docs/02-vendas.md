@@ -134,6 +134,7 @@ Também aba nativa (`app-tab-vendascomissao`, iframe `vendas-comissao.html`, abe
   - Seletor de vendedor. Em **"Todos"**: tabela-resumo com Vendedor | Vendas líq. | Qtd | Alíquota efetiva | **Comissão a receber**, ordenada pela comissão, com total geral (= "comissão total a pagar"). Clicar num vendedor abre o detalhamento dele.
   - Vendedor específico: detalhamento **por faixa** (Vendas líq. | Part.% | Qtd | Alíquota | Comissão) com total = comissão a receber daquele vendedor. Respeita o filtro de período.
   - Payload embute `linhasVend` = `[ym, vendedor, faixaLbl, faixaSort, vendas, mc, qtd]`; a visão "Por faixa" é derivada agregando os vendedores, então os totais de comissão das duas visões batem exatamente.
+  - **Regra de cadastro (decisão do usuário):** `COMISSAO_AVISTA = 100` é sempre tratado como **1%** (correção de erro de cadastro). Aplicada em `label_com` de `gerar_vendas_comissao_mcmoto.py` **e** `gerar_graficos_mcmoto.py`, então esses itens caem na faixa 1% (rótulo, agrupamento e comissão a 1%) em ambas as páginas.
 
 ## Gráficos (aba nativa de `index.html`)
 
