@@ -127,8 +127,13 @@ Também aba nativa (`app-tab-vendascomissao`, iframe `vendas-comissao.html`, abe
 
 - Agrupa as vendas pela **faixa de comissão do produto** (`produtos.COMISSAO_AVISTA`): 8%, 5%, 2%, 1%, 0,5%, 0%, "Sem comissão" (e o que mais existir). Cada faixa aparece separada.
 - **Vendas líquidas** com a mesma netagem de devoluções/estornos do CMV e do pico (na própria linha de `itens`): `SUM(VL_UNIT × (QUANTIDADE − QTD_DEVOLVIDA − QTD_ESTORNADA))`; custo análogo; `MC = vendas − custo`.
-- Filtro de período (3 / 6 / 12 meses / todo o histórico), **gráfico de barras por faixa** (valor + participação %), e tabela com participação %, MC, MC% e quantidade líquida, além de uma linha de total.
+- Filtro de período (3 / 6 / 12 meses / todo o histórico), **gráfico de barras por faixa** (valor + participação %), e tabela com participação %, MC, MC%, quantidade líquida e **Comissão** (= vendas líq. × alíquota da faixa), além de uma linha de total.
 - Nota: a distribuição atual concentra-se na faixa **1%** (~59% das vendas) e **5%** (~30%); as faixas 8% e 5% são as que o restante do painel marca como "Não comprar"/"A avaliar" (regra `nc`).
+
+**Visão "Por vendedor (comissão)"** (botão *Visão* na barra de controles): serve para **apurar a comissão a receber de cada vendedor**. O vendedor vem de `vendas.VENDEDOR` → `vendedores.DESCRICAO` (join de `itens` com `vendas`); a comissão de cada linha = **vendas líquidas da faixa × alíquota da faixa** (a alíquota é a própria `produtos.COMISSAO_AVISTA`; "Sem comissão" e "0%" = 0).
+  - Seletor de vendedor. Em **"Todos"**: tabela-resumo com Vendedor | Vendas líq. | Qtd | Alíquota efetiva | **Comissão a receber**, ordenada pela comissão, com total geral (= "comissão total a pagar"). Clicar num vendedor abre o detalhamento dele.
+  - Vendedor específico: detalhamento **por faixa** (Vendas líq. | Part.% | Qtd | Alíquota | Comissão) com total = comissão a receber daquele vendedor. Respeita o filtro de período.
+  - Payload embute `linhasVend` = `[ym, vendedor, faixaLbl, faixaSort, vendas, mc, qtd]`; a visão "Por faixa" é derivada agregando os vendedores, então os totais de comissão das duas visões batem exatamente.
 
 ## Gráficos (aba nativa de `index.html`)
 
